@@ -1,0 +1,55 @@
+#!/bin/sh
+
+_noOfArgs=$#
+
+if test $_noOfArgs -gt 0
+then
+_workingDir=$(pwd)
+_workingDir="$_workingDir/"
+	
+_jarPath="/bin/vcs.jar"
+_runJar="java -jar $_jarPath"
+
+	#init bare repository
+	if [ $1 = "init" ]
+	then
+	$_runJar $1 $_workingDir
+	fi
+	
+
+	#add file to staging area
+	if [ $1 = "add" ]
+	then
+		if [ $_noOfArgs -eq 2 ]
+		then
+		$_runJar $1 $_workingDir $2
+		else
+		echo "Filename expected : vcs add [file]"
+		fi
+	fi
+
+	#commit
+	if [ $1 = "commit" ]
+	then
+		if [ $_noOfArgs -eq 2 ]
+		then
+		$_runJar $1 $_workingDir $USER $2
+		else
+		echo "Message expected : vcs commit [message]"
+		fi
+	fi
+
+	#checkout
+	if [ $1 = "checkout" ]
+	then
+		if [ $_noOfArgs -eq 2 ]
+		then
+		$_runJar $1 $_workingDir $2
+		else
+		echo "commit/branch expected : vcs add [commit/branch]"
+		fi
+	fi
+
+else
+echo "Atleast one argument expected : vcs [arg1] [arg2] .."
+fi
