@@ -125,7 +125,8 @@ public class Operations {
 		return parent;
 	}
 	
-	public boolean writeHead(String workingDir,String commitHash) throws IOException{
+	public boolean writeHead(String workingDir,String commitHash) throws IOException
+	{
 		File head = new File(getHeadsFolder(workingDir)+"/head");
 		FileWriter fileWritter = new FileWriter(head,false);
 		BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
@@ -133,57 +134,70 @@ public class Operations {
 	    bufferWritter.close();
 		return true;
 	}
-	public String commit(String[] stagedFiles,VCSCommit parentCommit, String message,String author,String committer,String workingDir){
-		
-			VCSTree workDir = new VCSTree("workDir", workingDir, workingDir);
-			workDir.setModified(true);
-			VCSTree currentTree = workDir;
-			VCSTree eleAtPath = null;
-			VCSBlob lastEleAtPath = null;
-			for(int i=0;i<stagedFiles.length;i++){
-				currentTree = workDir;
-				StringBuilder overallPath = new StringBuilder();
-				String[] path = stagedFiles[i].split("/");
-				overallPath.append(workingDir);
-				for(int j=0;j<path.length;j++){
-					//System.out.println(path[j]);
-					if(j != 0)overallPath.append("/");
-					overallPath.append(path[j]);
-					if(j!=path.length-1){
-						AbstractVCSTree searchedItem=currentTree.getIfExist(path[j], "tree");
-						if(searchedItem ==null){
-							eleAtPath = new VCSTree(path[j],overallPath.toString(), workingDir);
-							eleAtPath.setModified(true);
-							currentTree.addItem(eleAtPath);
-							currentTree = eleAtPath;
-						}else currentTree = (VCSTree)searchedItem;
+	
+	public String commit(String[] stagedFiles,VCSCommit parentCommit, String message,String author,String committer,String workingDir)
+	{
+		VCSTree workDir = new VCSTree("workDir", workingDir, workingDir);
+		workDir.setModified(true);
+		VCSTree currentTree = workDir;
+		VCSTree eleAtPath = null;
+		VCSBlob lastEleAtPath = null;
+		for(int i=0;i<stagedFiles.length;i++)
+		{
+			currentTree = workDir;
+			StringBuilder overallPath = new StringBuilder();
+			String[] path = stagedFiles[i].split("/");
+			overallPath.append(workingDir);
+			for(int j=0;j<path.length;j++)
+			{
+				//System.out.println(path[j]);
+				if(j != 0)
+				{
+					overallPath.append("/");
+				}
+				overallPath.append(path[j]);
+				if(j!=path.length-1)
+				{
+					AbstractVCSTree searchedItem=currentTree.getIfExist(path[j], "tree");
+					if(searchedItem ==null)
+					{
+						eleAtPath = new VCSTree(path[j],overallPath.toString(), workingDir);
+						eleAtPath.setModified(true);
+						currentTree.addItem(eleAtPath);
+						currentTree = eleAtPath;
 					}
-					else{
-						AbstractVCSTree searchedItem=currentTree.getIfExist(path[j], "blob");
-						
-						if(searchedItem==null){
-							//System.out.println("NOT NULL FILE"+ path[j]);
-							lastEleAtPath = new VCSBlob(path[j], overallPath.toString(), workingDir);
-							lastEleAtPath.setModified(true);
-							currentTree.addItem(lastEleAtPath);
-							//System.out.println("here " +eleAtPath.printTree());
-						}
+					else
+					{
+						currentTree = (VCSTree)searchedItem;						
+					}
+				}
+				else
+				{
+					AbstractVCSTree searchedItem=currentTree.getIfExist(path[j], "blob");
+					if(searchedItem==null)
+					{
+						//System.out.println("NOT NULL FILE"+ path[j]);
+						lastEleAtPath = new VCSBlob(path[j], overallPath.toString(), workingDir);
+						lastEleAtPath.setModified(true);
+						currentTree.addItem(lastEleAtPath);
+						//System.out.println("here " +eleAtPath.printTree());
 					}
 				}
 			}
-			if(parentCommit!=null)
-			{
-				currentTree = workDir;
-				VCSTree parentTree = parentCommit.getTree();
-				VCSLogger.debugLogToCmd("Operations#commit#parentTree\n",parentTree.printTree(0));
-				inorder(currentTree,parentTree,"./",workingDir);
-			}
-			VCSLogger.debugLogToCmd("Operations#commit#newTree\n",workDir.printTree(0));
-			VCSCommit iniCommit = new VCSCommit(workingDir, parentCommit, workDir, message, author, committer);
-			iniCommit.writeCommitToDisk();
-			//System.out.println("commit hash	"+iniCommit.getObjectHash());
-			//VCSLogger.infoLogToCmd(iniCommit.getTree().printTree(0));
-			return iniCommit.getObjectHash();
+		}
+		if(parentCommit!=null)
+		{
+			currentTree = workDir;
+			VCSTree parentTree = parentCommit.getTree();
+			VCSLogger.debugLogToCmd("Operations#commit#parentTree\n",parentTree.printTree(0));
+			inorder(currentTree,parentTree,"./",workingDir);
+		}
+		VCSLogger.debugLogToCmd("Operations#commit#newTree\n",workDir.printTree(0));
+		VCSCommit iniCommit = new VCSCommit(workingDir, parentCommit, workDir, message, author, committer);
+		iniCommit.writeCommitToDisk();
+		//System.out.println("commit hash	"+iniCommit.getObjectHash());
+		//VCSLogger.infoLogToCmd(iniCommit.getTree().printTree(0));
+		return iniCommit.getObjectHash();
 	}
 	
 	private void inorder(AbstractVCSTree currentTree, AbstractVCSTree parentTree, String pathTillNow, String workingDir) {

@@ -138,7 +138,8 @@ public class VCSTree extends AbstractVCSTree{
 	 * @param type Type of immediate child.
 	 * @return boolean Exist Status.
 	 */
-	public AbstractVCSTree getIfExist(String name,String type){
+	public AbstractVCSTree getIfExist(String name,String type)
+	{
 		Iterator<AbstractVCSTree> it = immediateChildren.iterator();
 		while(it.hasNext()){
 			AbstractVCSTree item = it.next();
