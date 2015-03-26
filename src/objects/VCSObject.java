@@ -168,4 +168,14 @@ public abstract class VCSObject {
 	    }
 		return null;
 	}
+
+	public String getWorkingDirectory() {
+		return workingDirectory;
+	}
+
+	public void setWorkingDirectory(String workingDirectory) {
+		this.workingDirectory = workingDirectory;
+	}
+	
+	
 }

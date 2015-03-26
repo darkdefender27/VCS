@@ -129,7 +129,7 @@ public class VCSTree extends AbstractVCSTree{
 		//createInMemory();
 		//System.out.println(immediateChildren.size());
 		File selfFolder = new File(diskPath);
-		if(!selfFolder.mkdir()) return false;
+		selfFolder.mkdir();
 		Iterator<AbstractVCSTree> it = immediateChildren.listIterator();
 		while(it.hasNext())
 		{

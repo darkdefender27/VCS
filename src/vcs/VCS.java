@@ -36,8 +36,25 @@ public class VCS {
 	}
 
 	public static void main(String[] args)
-	{
+	{		
+		String workDir = "/home/rounak/final year project/VCS v1.5.0/VCSDebug/";
+		//String cmdArgs = "init /home/rounak/Documents/VCSDebug/";
+		//String cmdArgs = "add /home/rounak/Documents/VCSDebug/ web/index.jsp";
+		//String cmdArgs = "add /home/rounak/Documents/VCSDebug/ web.config";
+		//String cmdArgs = "add /home/rounak/Documents/VCSDebug/ web/meta/web.xml";
+		//String cmdArgs = "add /home/rounak/Documents/VCSDebug/ res/index.java";
+		//String cmdArgs = "add /home/rounak/Documents/VCSDebug/ web/rounak";
+		//String cmdArgs = "commit /home/rounak/Documents/VCSDebug/ warrior commitMessage";
+		//String cmdArgs = "create branch master 6c9b4ab3acd4941b1c8cc42287fb4cfa3263ff4862d5259fd1cd95b385199";
+		//String cmdArgs = "create branch branch1 6c9b4ab3acd4941b1c8cc42287fb4cfa3263ff4862d5259fd1cd95b385199";
+		//String cmdArgs = "merge branch master branch1";
+		String cmdArgs = "checkout /home/rounak/Documents/VCSDebug/ 8885326a2c392713a64ea16f9b572828515deae8b9c632e38614bd47b2adff8";
+		//String cmdArgs = "switch branch master";
+		//String cmdArgs = "switch branch branch1";
+
 		args = cmdArgs.split(" ");
+		args[1] = replaceHashWithSpace(args[1]);
+		boolean flag = false;
 		int argLength = args.length;
 		if( argLength >= 1){
 			Operations ops = new Operations();
@@ -116,9 +133,10 @@ public class VCS {
 				Iterator<AbstractVCSTree> it = commit.getTree().getImmediateChildren().listIterator();
 				//VCSLogger.debugLogToCmd("VCS#MAIN#checkout",commit.getTree().printTree(0));
 				//VCSLogger.debugLogToCmd("VCS#MAIN#checkout", "Tree Printed");
-				while(it.hasNext() && status)
+				while(it.hasNext())
 				{
 					status = (it.next()).writeOriginalToDisk();
+					if(!status) break;
 				}
 				if(status) VCSLogger.infoLogToCmd("Successfully checked out");
 			}
@@ -167,7 +185,69 @@ public class VCS {
 					VCSLogger.infoLogToCmd("No files staged to commit");
 				}
 			}
+			if(args[0].equals("create") && args[1].equals("branch") && argLength == 4)
+			{
+				String branchName = args[2];
+				String commitHash = args[3];
+				try {
+					flag = ops.createBranch(branchName,commitHash,workDir);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				if(flag)
+				{
+					System.out.println("Branch created successfully");
+				}
+				
+			}
+			if(args[0].equals("switch") && args[1].equals("branch") && argLength == 3)
+			{
+				String branchName = args[2];
+				try {
+					flag = ops.switchBranch(branchName,workDir);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				if(flag)
+				{
+					System.out.println("Branch switched successfully");
+				}
+			}
+			if(args[0].equals("merge") && args[1].equals("branch") && argLength == 4)
+			{
+				String firstBranchName = args[2];
+				String secondBranchName = args[3];
+				try {
+					flag = ops.mergeBranch(workDir, firstBranchName,secondBranchName);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				System.out.println("inside merge");
+				if(flag)
+				{
+					System.out.println("Branch merged successfully");
+				}
+				
+			}
+
 		}
+	}
+	public static String replaceHashWithSpace(String arg)
+	{
+		char[] tmp = arg.toCharArray();
+		int stringLength = arg.length();
+		for(int i=0;i<stringLength;i++)
+		{
+			if(tmp[i]=='#')
+			{
+				tmp[i]=' ';
+			}
+		}
+		String retval = new String(tmp);
+		return retval;
 	}
 
 	/*

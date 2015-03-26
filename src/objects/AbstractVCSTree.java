@@ -20,6 +20,8 @@ public abstract class AbstractVCSTree extends VCSObject
 	 */
 	protected String name;
 	
+	protected String relativePath;
+
 	/**
 	 * Creates instance from <code>hashed entity</code> which was stored on disk.
 	 * @param objectHash @see {@link VCSObject#objectHash}
@@ -32,6 +34,7 @@ public abstract class AbstractVCSTree extends VCSObject
 		this.objectHash = objectHash;
 		this.diskPath = diskPath;
 		this.name = name;
+		this.relativePath = this.diskPath.substring(this.workingDirectory.length()-1, this.diskPath.length());
 	}
 	/**
 	 * Creates instance from <code>entity</code> which was stored on disk.
@@ -43,6 +46,7 @@ public abstract class AbstractVCSTree extends VCSObject
 		super(workingDirectory);
 		this.name = name;
 		this.diskPath = diskPath;
+		this.relativePath = this.diskPath.substring(this.workingDirectory.length()-1, this.diskPath.length());
 	}
 	
 	/**
@@ -101,5 +105,7 @@ public abstract class AbstractVCSTree extends VCSObject
 	public boolean isModified(){
 		return modified;
 	}
-
+	public String getRelativePath(){
+		return relativePath;
+	}
 }

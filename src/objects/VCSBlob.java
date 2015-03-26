@@ -290,5 +290,41 @@ public class VCSBlob extends AbstractVCSTree{
 		return false;
 	}
 	
+	public boolean writeOriginalToTempDir(String tmpDirAbsolutePath){
+		try{  
+			String objectFile = Operations.getObjectsFolder(workingDirectory) 
+										+ "/" + objectHash.charAt(0) 
+										+ objectHash.charAt(1) 
+										+ "/" 
+										+ objectHash.substring(2, objectHash.length());
+			File diskObjectFile = new File(objectFile);
+        	if(diskObjectFile.exists()){
+        		FileInputStream fin=new FileInputStream(objectFile);  
+    			InflaterInputStream in=new InflaterInputStream(fin);
+    			
+    			File unCompressedFile = new File(tmpDirAbsolutePath);
+    			unCompressedFile.createNewFile();
+    			FileOutputStream fout=new FileOutputStream(tmpDirAbsolutePath);
+    			
+    			int i;  
+    			while((i=in.read())!=-1){  
+    				fout.write((byte)i);  
+    				fout.flush(); 
+    			}
+    			fin.close();  
+    			fout.close();  
+    			in.close();
+    			VCSLogger.debugLogToCmd("VCSBlob#writeOriginalToDisk", tmpDirAbsolutePath + " blob restored");
+	        	return true;
+        	}  
+		}catch(FileNotFoundException e){
+			VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
+	    }catch(IOException e){
+	    	VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
+	    }
+		return false;
+	}
+	
+
 	
 }
