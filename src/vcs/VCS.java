@@ -36,22 +36,7 @@ public class VCS {
 	}
 
 	public static void main(String[] args)
-	{		
-		String workDir = "/home/rounak/final year project/VCS v1.5.0/VCSDebug/";
-		//String cmdArgs = "init /home/rounak/Documents/VCSDebug/";
-		//String cmdArgs = "add /home/rounak/Documents/VCSDebug/ web/index.jsp";
-		//String cmdArgs = "add /home/rounak/Documents/VCSDebug/ web.config";
-		//String cmdArgs = "add /home/rounak/Documents/VCSDebug/ web/meta/web.xml";
-		//String cmdArgs = "add /home/rounak/Documents/VCSDebug/ res/index.java";
-		//String cmdArgs = "add /home/rounak/Documents/VCSDebug/ web/rounak";
-		//String cmdArgs = "commit /home/rounak/Documents/VCSDebug/ warrior commitMessage";
-		//String cmdArgs = "create branch master 6c9b4ab3acd4941b1c8cc42287fb4cfa3263ff4862d5259fd1cd95b385199";
-		//String cmdArgs = "create branch branch1 6c9b4ab3acd4941b1c8cc42287fb4cfa3263ff4862d5259fd1cd95b385199";
-		//String cmdArgs = "merge branch master branch1";
-		String cmdArgs = "checkout /home/rounak/Documents/VCSDebug/ 8885326a2c392713a64ea16f9b572828515deae8b9c632e38614bd47b2adff8";
-		//String cmdArgs = "switch branch master";
-		//String cmdArgs = "switch branch branch1";
-
+	{	
 		args = cmdArgs.split(" ");
 		args[1] = replaceHashWithSpace(args[1]);
 		boolean flag = false;
