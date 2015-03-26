@@ -150,7 +150,6 @@ public class MyersDiff {
         path = path.prev;
       }
     }
-
     int ioffset = 0;
     int joffset = 0;
     for (Delta delta : deltas) 
@@ -196,7 +195,6 @@ public class MyersDiff {
       }
       joffset += right.count;
     }
-
     for (int i = ioffset; i < orig.length; i++)
     {
       orig[i].setStatus(FileLine.UNCHANGED);
@@ -205,9 +203,7 @@ public class MyersDiff {
     {
       rev[i].setStatus(FileLine.UNCHANGED);
     }
-
     FileDiffResult diffResult = new FileDiffResult(new ParsedFile(orig),new ParsedFile(rev));
-
     return diffResult;
   }
 

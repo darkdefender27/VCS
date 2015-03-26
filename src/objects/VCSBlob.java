@@ -152,6 +152,59 @@ public class VCSBlob extends AbstractVCSTree{
 		return false;
 	}
 	
+	public String writeTempFile(String tempPath,String workingDir){
+		try{  
+			String objectFile = Operations.getObjectsFolder(workingDirectory) 
+										+ "/" + objectHash.charAt(0) 
+										+ objectHash.charAt(1) 
+										+ "/" 
+										+ objectHash.substring(2, objectHash.length());
+			File diskObjectFile = new File(objectFile);
+        	if(diskObjectFile.exists())
+        	{
+        		FileInputStream fin=new FileInputStream(objectFile);  
+    			InflaterInputStream in=new InflaterInputStream(fin);
+    			File dir=new File(tempPath);
+    			if(!dir.exists())
+    			{
+    				dir.mkdir();
+    			}
+    			String folder="/"+diskPath.replace(workingDir, "") ;
+    			//System.out.println(folder+" last index = "+folder.lastIndexOf("/"));
+    			if(folder.lastIndexOf("/")<=0)
+    			{
+    				folder="";
+    			}
+    			else
+    			{
+    				folder=folder.substring(0, folder.lastIndexOf("/"))+"/";
+    			}
+    			File unCompressedFile = new File(tempPath +folder+name);
+    			//System.out.println("tempPath = "+tempPath +" folder =" +folder+" name "+name);
+    			unCompressedFile.getParentFile().mkdirs();
+    			unCompressedFile.createNewFile();
+    			FileOutputStream fout=new FileOutputStream(tempPath +folder+name);
+    			
+    			int i;  
+    			while((i=in.read())!=-1)
+    			{  
+    				fout.write((byte)i);  
+    				fout.flush(); 
+    			}
+    			fin.close();  
+    			fout.close();
+    			in.close();
+    			VCSLogger.debugLogToCmd("VCSBlob#writeTempFile", diskPath + " blob restored");
+	        	return tempPath+folder+name;
+        	}  
+		}catch(FileNotFoundException e){
+			VCSLogger.errorLogToCmd("VCSBlob#writeTempFile", e.toString());
+	    }catch(IOException e){
+	    	VCSLogger.errorLogToCmd("VCSBlob#writeTempFile", e.toString());
+	    }
+		return null;
+	}
+	
 	/**
 	 * Generates SHA256 hash of file content.
 	 * @param absoluteFilePath

@@ -37,12 +37,6 @@ public class VCS {
 
 	public static void main(String[] args)
 	{
-		//workDir is absolute
-		//String cmdArgs = "init /home/ambarish/Desktop/vcsdebug/";
-		//String cmdArgs = "add /home/ambarish/Desktop/vcsdebug/ *";
-		String cmdArgs = "commit /home/ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com initial";
-		
-		//String cmdArgs = "checkout /home/warrior/Downloads/VCSDebug/ e03c4cbb9a9ecc3e67afc039b3bad4f87048b395b37d5711984041663c2a4b";
 		args = cmdArgs.split(" ");
 		int argLength = args.length;
 		if( argLength >= 1){
@@ -174,45 +168,12 @@ public class VCS {
 				}
 			}
 		}
-		
-		
-		
-		
-		//ops.initRepository("./");
-		//String[] stagedFiles = {"root/new1/3.c","root/new1/new4/5.c","root/new2/1.c","root/new2/2.c"};
-		
-		//ops.commit(stagedFiles, null,"initial commit", "", "", "./");
-//		
-//		VCSBlob blob1 = new VCSBlob("hello.c", "./root/hello.c", "./");
-//		//blob1.writeObjectToDisk();
-//		
-//		VCSBlob blob2 = new VCSBlob("new.c", "./root/new/new.c", "./");
-////		blob2.writeObjectToDisk();
-//		
-//		VCSTree tree1 = new VCSTree("new", "./root/new/", "./");
-//		tree1.addItem(blob2);
-//		System.out.println(tree1.generateTreeHash());
-////		tree1.writeObjectToDisk();
-////		
-//		VCSTree tree2 = new VCSTree("root", "./root/", "./");
-//		tree2.addItem(tree1);
-//		tree2.addItem(blob1);
-//		System.out.println(tree2.generateTreeHash());
-//		//tree2.writeTreeToDisk();
-//		System.out.print(tree2.printTree(0));
-//		
-		
-		//VCSBlob blob = new VCSBlob("7dc736115fddc4a178c7f38061d739d8ad36bbceccea597cdb3a9f17557c", "./", "./tree", "tree");
-		//System.out.println(blob.writeOriginalToDisk());
-//	
-//		VCSTree tree = new VCSTree("7dc736115fddc4a178c7f38061d739d8ad36bbceccea597cdb3a9f17557c", "./", "./root", "root");
-		//tree.writeOriginalToDisk();
-//		System.out.print(tree.printTree(0));
-		//VCSCommit commit = new VCSCommit("./", null, tree2, "ini Commit", "prashant", "prashnayt");
-//		commit.writeObjectToDisk();
-//		System.out.println(commit.getObjectHash());
-		
-		//VCSCommit co = new VCSCommit(objectHash, workingDirectory)
 	}
-	
+
+	/*
+	 * //workDir is absolute
+		String cmdArgs = "init /home/ambarish/Desktop/vcsdebug/";
+		//String cmdArgs = "add /home/ambarish/Desktop/vcsdebug/ *";
+		//String cmdArgs = "commit /home/ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com initial";
+	 */
 }

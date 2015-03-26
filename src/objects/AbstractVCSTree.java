@@ -1,12 +1,15 @@
 package objects;
+
+import java.util.Iterator;
+
 /**
  * <code>Abstract</code> class for holding object that represent some entity on disk.
  * Entity can be a <code>folder</code> or a <code>file</code>.
  * @author warrior
  *
  */
-public abstract class AbstractVCSTree extends VCSObject{
-	
+public abstract class AbstractVCSTree extends VCSObject
+{
 	/**
 	 * Holds <code>absolute path</code> of the unhashed entity on disk.
 	 */
@@ -98,4 +101,5 @@ public abstract class AbstractVCSTree extends VCSObject{
 	public boolean isModified(){
 		return modified;
 	}
+
 }

@@ -1,4 +1,11 @@
 import java.awt.Dimension;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import com.diff.core.Diff;
+import com.diff.core.FileDiffResult;
+import com.diff.core.MergeResult;
 
 import javax.swing.JFrame;
 
@@ -11,6 +18,7 @@ import analytics.ScatterPlot;
 
 public class EntryPoint extends JFrame 
 {
+	
 
   private static final long serialVersionUID = 1L;
 
@@ -60,7 +68,7 @@ public class EntryPoint extends JFrame
         return chart;
     }
     
-    public static void main(String[] args) 
+    public static void EntryPoint_Main(String[] args) 
     {
         /*EntryPoint demo = new EntryPoint("Comparison", "Which operating system are you using?");
         demo.pack();

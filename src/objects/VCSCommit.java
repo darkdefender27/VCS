@@ -2,8 +2,6 @@ package objects;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Iterator;
-
 import logger.VCSLogger;
 
 /**
@@ -11,8 +9,38 @@ import logger.VCSLogger;
  * @author warrior
  *
  */
-public class VCSCommit extends VCSObject{
+public class VCSCommit extends VCSObject
+{
+	/**
+	 * number of lines inserted in all of the staged files 
+	 */
+	private int noOfLinesInserted;
 	
+	/**
+	 * number of lines deleted in all of the staged files
+	 */
+	private int noOfLinesDeleted;
+	
+	public int getNoOfLinesInserted() {
+		return noOfLinesInserted;
+	}
+
+	public void setNoOfLinesInserted(int noOfLinesInserted) {
+		this.noOfLinesInserted = noOfLinesInserted;
+	}
+
+	public int getNoOfLinesDeleted() {
+		return noOfLinesDeleted;
+	}
+
+	public void setNoOfLinesDeleted(int noOfLinesDeleted) {
+		this.noOfLinesDeleted = noOfLinesDeleted;
+	}
+	
+	/**
+	 * the time of the commit
+	 */
+	private long commitTimestamp;
 	/**
 	 * Parent commit. Null if no parent exist.
 	 */
@@ -63,7 +91,8 @@ public class VCSCommit extends VCSObject{
 	 * @param committer @see {@link #committer}
 	 */
 	public VCSCommit(String workingDirectory,VCSCommit parentCommit, VCSTree tree,
-			String commitMessage, String author, String committer) {
+			String commitMessage, String author, String committer) 
+	{
 		super(workingDirectory);
 		this.parentCommit = parentCommit;
 		this.tree = tree;
@@ -71,10 +100,13 @@ public class VCSCommit extends VCSObject{
 		this.author = author;
 		this.committer = committer;
 		this.type = "commit";
-		try {
+		try 
+		{
 			hashContent(getContent());
-		} catch (NoSuchAlgorithmException | IOException e) {
-			// TODO Auto-generated catch block
+		}
+		catch (NoSuchAlgorithmException | IOException e) 
+		{
+			//TODO Auto-generated catch block
 			VCSLogger.errorLogToCmd("VCSCommit#", e.toString());
 	    }
 		VCSLogger.debugLogToCmd("VCSCommit#", "commit initialised");
@@ -91,7 +123,8 @@ public class VCSCommit extends VCSObject{
 	/**
 	 * Returns commit object hash.
 	 */
-	public String toString(){
+	public String toString()
+	{
 		return this.objectHash;
 	}
 	
@@ -105,7 +138,8 @@ public class VCSCommit extends VCSObject{
 	 * 	commitMessage"
 	 */
 	@Override
-	public String getContent() {
+	public String getContent() 
+	{
 		/*
 		 * tree hash name path
 		 * parent(commit) hash
@@ -124,8 +158,10 @@ public class VCSCommit extends VCSObject{
 			contentBuilder.append(tree.getPath());
 			
 			contentBuilder.append("\nparent ");
-			if(parentCommit!=null) contentBuilder.append(parentCommit.getObjectHash());
-			
+			if(parentCommit!=null)
+			{
+				contentBuilder.append(parentCommit.getObjectHash());
+			}
 			contentBuilder.append("\nauthor ");
 			contentBuilder.append(this.author);
 			
@@ -183,7 +219,10 @@ public class VCSCommit extends VCSObject{
 	
 	public boolean writeCommitToDisk(){
 		boolean status = writeObjectToDisk();
-		if(status) status = tree.writeTreeToDisk();
+		if(status) 
+		{
+			status = tree.writeTreeToDisk();
+		}
 		VCSLogger.debugLogToCmd("VCSCommit#writeCommitToDisk", objectHash +" commit writtent to disk");
 		return status;
 	}
@@ -207,5 +246,15 @@ public class VCSCommit extends VCSObject{
 	public String getCommitter() {
 		return committer;
 	}
+
+	public long getCommitTimestamp() {
+		return commitTimestamp;
+	}
+
+	public void setCommitTimestamp(long commitTimestamp) {
+		this.commitTimestamp = commitTimestamp;
+	}
+	
+	
 	
 }
