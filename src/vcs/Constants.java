@@ -53,6 +53,11 @@ public class Constants {
 	public static String TAGS_FOLDER="tags";
 	
 	/**
+	 * <code>Name</code> of the folder where <code>tags</code> temporary files will be stored on the disk.
+	 */
+	public static String TEMP_FOLDER="temp";
+	
+	/**
 	 * <code>Private</code> so that no one creates its instance.
 	 */
 	private Constants(){

@@ -3,20 +3,21 @@ package vcs;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Logger;
+import java.util.Timer;
+
+import com.diff.core.Diff;
+import com.diff.core.FileDiffResult;
 
 import logger.VCSLogger;
-
 import objects.AbstractVCSTree;
 import objects.VCSBlob;
 import objects.VCSCommit;
@@ -110,14 +111,17 @@ public class Operations {
 		return returnStatus;
 	}
 	
-	public VCSCommit getHead(String workingDir) throws IOException{
+	public VCSCommit getHead(String workingDir) throws IOException
+	{
 		BufferedReader br = null;
 		File head = new File(getHeadsFolder(workingDir)+"/head");
 		VCSCommit parent = null;
 		String sCurrentLine;
-		if(head.exists()){
+		if(head.exists())
+		{
 			br = new BufferedReader(new FileReader(getHeadsFolder(workingDir)+"/head"));
-			while ((sCurrentLine = br.readLine()) != null) {
+			while ((sCurrentLine = br.readLine()) != null) 
+			{
 				parent = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_TREE);
 			}
 			br.close();
@@ -125,7 +129,8 @@ public class Operations {
 		return parent;
 	}
 	
-	public boolean writeHead(String workingDir,String commitHash) throws IOException{
+	public boolean writeHead(String workingDir,String commitHash) throws IOException
+	{
 		File head = new File(getHeadsFolder(workingDir)+"/head");
 		FileWriter fileWritter = new FileWriter(head,false);
 		BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
@@ -133,57 +138,114 @@ public class Operations {
 	    bufferWritter.close();
 		return true;
 	}
-	public String commit(String[] stagedFiles,VCSCommit parentCommit, String message,String author,String committer,String workingDir){
-		
-			VCSTree workDir = new VCSTree("workDir", workingDir, workingDir);
-			workDir.setModified(true);
-			VCSTree currentTree = workDir;
-			VCSTree eleAtPath = null;
-			VCSBlob lastEleAtPath = null;
-			for(int i=0;i<stagedFiles.length;i++){
-				currentTree = workDir;
-				StringBuilder overallPath = new StringBuilder();
-				String[] path = stagedFiles[i].split("/");
-				overallPath.append(workingDir);
-				for(int j=0;j<path.length;j++){
-					//System.out.println(path[j]);
-					if(j != 0)overallPath.append("/");
+	
+	public String commit(String[] stagedFiles,VCSCommit parentCommit, String message,String author,String committer,String workingDir)
+	{
+		VCSTree workDir = new VCSTree("workDir", workingDir, workingDir);
+		workDir.setModified(true);
+		VCSTree currentTree = workDir;
+		VCSTree eleAtPath = null;
+		VCSBlob lastEleAtPath = null;
+		int noOflinesInserted=0,noOfLinesDeleted=0;
+		for(int i=0;i<stagedFiles.length;i++)
+		{
+			currentTree = workDir;
+			StringBuilder overallPath = new StringBuilder();
+			String[] path = stagedFiles[i].split("/");
+			overallPath.append(workingDir);
+				for(int j=0;j<path.length;j++)
+				{
+					if(j != 0)
+					{
+						overallPath.append("/");
+					}
 					overallPath.append(path[j]);
-					if(j!=path.length-1){
+					if(j!=path.length-1)
+					{
 						AbstractVCSTree searchedItem=currentTree.getIfExist(path[j], "tree");
-						if(searchedItem ==null){
+						if(searchedItem ==null)
+						{
 							eleAtPath = new VCSTree(path[j],overallPath.toString(), workingDir);
 							eleAtPath.setModified(true);
 							currentTree.addItem(eleAtPath);
 							currentTree = eleAtPath;
-						}else currentTree = (VCSTree)searchedItem;
+						}
+						else
+						{
+							currentTree = (VCSTree)searchedItem;
+						}
 					}
-					else{
+					else
+					{
 						AbstractVCSTree searchedItem=currentTree.getIfExist(path[j], "blob");
-						
-						if(searchedItem==null){
+						if(searchedItem==null)
+						{
 							//System.out.println("NOT NULL FILE"+ path[j]);
 							lastEleAtPath = new VCSBlob(path[j], overallPath.toString(), workingDir);
+							//overall path 
+							//check if the file exists in parent commit and do diff
 							lastEleAtPath.setModified(true);
 							currentTree.addItem(lastEleAtPath);
 							//System.out.println("here " +eleAtPath.printTree());
 						}
 					}
 				}
-			}
-			if(parentCommit!=null)
+			if(parentCommit!=null && parentCommit.getTree()!=null)
 			{
-				currentTree = workDir;
-				VCSTree parentTree = parentCommit.getTree();
-				VCSLogger.debugLogToCmd("Operations#commit#parentTree\n",parentTree.printTree(0));
-				inorder(currentTree,parentTree,"./",workingDir);
+				AbstractVCSTree obj=parentCommit.getTree().findTreeIfExist(stagedFiles[i], 0);
+				VCSBlob b=(VCSBlob)obj;
+				String fullFileName=null;
+				if(b!=null)
+				{
+					//System.out.println(overallPath+"  parent commit's filename "+b.getObjectHash());
+					fullFileName=b.writeTempFile(workingDir+"/"+Constants.VCSFOLDER+"/"+Constants.TEMP_FOLDER +"/",workingDir);
+				}
+				//do diff here
+				if(fullFileName!=null)
+				{
+					//System.out.println(workingDir+"/"+stagedFiles[i]+" "+fullFileName);
+					Diff diffObj=new Diff();
+					FileDiffResult result=diffObj.diff(readFileIntoString(fullFileName),readFileIntoString(workingDir+"/"+stagedFiles[i]), null, false);
+					noOfLinesDeleted+=result.getLineResult().getNoOfLinesDeleted();
+					noOflinesInserted+=result.getLineResult().getNoOfLinesAdded();
+					result=null;
+				}
+				else
+				{
+					Diff diffObj=new Diff();
+					FileDiffResult result=diffObj.diff("",readFileIntoString(workingDir+stagedFiles[i]), null, false);
+					noOfLinesDeleted+=result.getLineResult().getNoOfLinesDeleted();
+					noOflinesInserted+=result.getLineResult().getNoOfLinesAdded();
+					result=null;
+				}
 			}
-			VCSLogger.debugLogToCmd("Operations#commit#newTree\n",workDir.printTree(0));
-			VCSCommit iniCommit = new VCSCommit(workingDir, parentCommit, workDir, message, author, committer);
-			iniCommit.writeCommitToDisk();
-			//System.out.println("commit hash	"+iniCommit.getObjectHash());
-			//VCSLogger.infoLogToCmd(iniCommit.getTree().printTree(0));
-			return iniCommit.getObjectHash();
+			else if(parentCommit==null)
+			{
+				Diff diffObj=new Diff();
+				FileDiffResult result=diffObj.diff("",readFileIntoString(workingDir+stagedFiles[i]), null, false);
+				noOfLinesDeleted+=result.getLineResult().getNoOfLinesDeleted();
+				noOflinesInserted+=result.getLineResult().getNoOfLinesAdded();
+				result=null;
+			}
+		}
+		if(parentCommit!=null)
+		{
+			currentTree = workDir;
+			VCSTree parentTree = parentCommit.getTree();
+			VCSLogger.debugLogToCmd("Operations#commit#parentTree\n",parentTree.printTree(0));
+			inorder(currentTree,parentTree,"./",workingDir);
+		}
+		
+		VCSLogger.debugLogToCmd("Operations#commit#newTree\n",workDir.printTree(0));
+		VCSCommit iniCommit = new VCSCommit(workingDir, parentCommit, workDir, message, author, committer);
+		iniCommit.setNoOfLinesInserted(noOflinesInserted);
+		iniCommit.setNoOfLinesDeleted(noOfLinesDeleted);
+		System.out.println("lines added " +noOflinesInserted+" lines deleted "+noOfLinesDeleted);
+		iniCommit.writeCommitToDisk();
+		iniCommit.setCommitTimestamp(System.currentTimeMillis());
+		System.out.println("commit hash	"+iniCommit.getObjectHash());
+		VCSLogger.infoLogToCmd(iniCommit.getTree().printTree(0));
+		return iniCommit.getObjectHash();
 	}
 	
 	private void inorder(AbstractVCSTree currentTree, AbstractVCSTree parentTree, String pathTillNow, String workingDir) {
@@ -236,6 +298,22 @@ public class Operations {
 		}
 		
 		
+	}
+	
+	
+	public static String readFileIntoString(String completeFileName)
+	{
+		String retVal=null;
+		try 
+		{
+			retVal=new String(Files.readAllBytes(Paths.get(completeFileName)));
+		}
+		catch (IOException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return retVal;
 	}
 	
 //	private void inorder(AbstractVCSTree currentTree,AbstractVCSTree parentTree){

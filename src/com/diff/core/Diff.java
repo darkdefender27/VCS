@@ -4,14 +4,14 @@ import java.util.*;
 
 public class Diff {
 	
-	static int unchanged=0;
-	static int modifiedLeft=0;
-	static int modifiedRight=0;
-	static int noMatchLeft=0;
-	static int noMatchRight=0;
-	static int totalModifications;
+	int unchanged=0;
+	int modifiedLeft=0;
+	int modifiedRight=0;
+	int noMatchLeft=0;
+	int noMatchRight=0;
+	int totalModifications;
 
-	public static FileDiffResult diff(String leftFileContent, String rightFileContent, Cancellable cancellable, boolean ignoreLeadingSpaces) {
+	public FileDiffResult diff(String leftFileContent, String rightFileContent, Cancellable cancellable, boolean ignoreLeadingSpaces) {
 		ParsedFile leftFile = new ParsedFile(leftFileContent);
 		ParsedFile rightFile = new ParsedFile(rightFileContent);
 		FileDiffResult result = MyersDiff.diff(leftFile,rightFile,cancellable,ignoreLeadingSpaces);
@@ -24,12 +24,11 @@ public class Diff {
 		DiffLineResult lineResult=new DiffLineResult();
 		lineResult.setNoOfLinesAdded(insertions);
 		lineResult.setNoOfLinesDeleted(deletions);
-		lineResult.setNoOfLinesUnmodified(unchanged);
 		result.setLineResult(lineResult);
 		return result;
 	}
 	
-	private static void countLinesUnchangedModified(FileDiffResult result) 
+	private void countLinesUnchangedModified(FileDiffResult result)
 	{
 		int i=0;
 		int leftCount,rightCount;
@@ -252,10 +251,10 @@ public class Diff {
 	}
 
 
-	public static MergeResult merge(String commonAncestor, String version1, String version2, Cancellable cancellable, boolean ignoreLeadingSpaces){
+	public MergeResult merge(String commonAncestor, String version1, String version2, Cancellable cancellable, boolean ignoreLeadingSpaces){
 		MergeResult result = null;
-		FileDiffResult diff1 = Diff.diff(commonAncestor, version1, cancellable, ignoreLeadingSpaces);
-		FileDiffResult diff2 = Diff.diff(commonAncestor, version2, cancellable, ignoreLeadingSpaces);
+		FileDiffResult diff1 = diff(commonAncestor, version1, cancellable, ignoreLeadingSpaces);
+		FileDiffResult diff2 = diff(commonAncestor, version2, cancellable, ignoreLeadingSpaces);
 		diff1 = Diff.format(diff1);
 		diff2 = Diff.format(diff2);
 		if (cancellable!=null && cancellable.isCancelled()){

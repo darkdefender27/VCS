@@ -1,18 +1,11 @@
 package objects;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.zip.InflaterInputStream;
-
 import logger.VCSLogger;
-
-import vcs.Operations;
-import vcs.VCS;
 
 /**
  * Class representing Disk Folder entity.
@@ -43,7 +36,7 @@ public class VCSTree extends AbstractVCSTree{
 	
 	/**
 	 * Creates instance from unhashed folder entity.
-	 * Note:SHA256 hash calculation is repsonsibility class client.
+	 * Note:SHA256 hash calculation is responsibility class client.
 	 * @param name @see {@link AbstractVCSTree#name}
 	 * @param path @see {@link AbstractVCSTree#diskPath}
 	 * @param workingDirectory @see {@link VCSObject#workingDirectory}
@@ -56,16 +49,22 @@ public class VCSTree extends AbstractVCSTree{
 	}
 	
 	/**
-	 * Generate tree content SHA256 hash. Note:SHA256 hash calculation is repsonsibility class client.
+	 * Generate tree content SHA256 hash. Note:SHA256 hash calculation is responsibility class client.
 	 * @return String 40byte hash.
 	 */
-	public String generateTreeHash(){
-		try {
+	public String generateTreeHash()
+	{
+		try 
+		{
 			return hashContent(getContent());
-		} catch (NoSuchAlgorithmException e) {
+		}
+		catch (NoSuchAlgorithmException e) 
+		{
 			// TODO Auto-generated catch block
 			VCSLogger.errorLogToCmd("VCSTree#generateTreeHash", e.toString());
-	    } catch (IOException e) {
+	    }
+		catch (IOException e) 
+		{
 			// TODO Auto-generated catch block
 	    	VCSLogger.errorLogToCmd("VCSTree#generateTreeHash", e.toString());
 		}
@@ -77,30 +76,36 @@ public class VCSTree extends AbstractVCSTree{
 	 * @param element {@link AbstractVCSTree} element to add.
 	 * @return boolean Add status.
 	 */
-	public boolean addItem(AbstractVCSTree element){
-		if(immediateChildren!=null){
+	public boolean addItem(AbstractVCSTree element)
+	{
+		if(immediateChildren!=null)
+		{
 			immediateChildren.add(element);
 			generateTreeHash();
 			return true;
 		}
 		return false;
 	}
+	
 	/**
 	 * Return tree description. Each line contains description of immediate child.
 	 * @return String Tree description.
 	 */
 	@Override
-	public String getContent() {
+	public String getContent() 
+	{
 		/*
 		 * hash type name
 		 * hash type name
 		 * ..
 		 * .
 		 */
-		if(immediateChildren !=null){
+		if(immediateChildren !=null)
+		{
 			StringBuilder contentBuilder = new StringBuilder();
 			
-			for(int i = 0;i< immediateChildren.size();i++){
+			for(int i = 0;i< immediateChildren.size();i++)
+			{
 				AbstractVCSTree element = immediateChildren.get(i);
 				contentBuilder.append(element);
 				contentBuilder.append("\n");
@@ -118,14 +123,16 @@ public class VCSTree extends AbstractVCSTree{
 	 * @return boolean Write status.
 	 */
 	@Override
-	public boolean writeOriginalToDisk() {
+	public boolean writeOriginalToDisk() 
+	{
 		// TODO Auto-generated method stub
 		//createInMemory();
 		//System.out.println(immediateChildren.size());
 		File selfFolder = new File(diskPath);
 		if(!selfFolder.mkdir()) return false;
 		Iterator<AbstractVCSTree> it = immediateChildren.listIterator();
-		while(it.hasNext()){
+		while(it.hasNext())
+		{
 			(it.next()).writeOriginalToDisk();
 		}
 		VCSLogger.debugLogToCmd("VCSTree#writeOriginalToDisk", diskPath + " tree restored");
@@ -138,12 +145,16 @@ public class VCSTree extends AbstractVCSTree{
 	 * @param type Type of immediate child.
 	 * @return boolean Exist Status.
 	 */
-	public AbstractVCSTree getIfExist(String name,String type){
+	public AbstractVCSTree getIfExist(String name,String type)
+	{
 		Iterator<AbstractVCSTree> it = immediateChildren.iterator();
-		while(it.hasNext()){
+		while(it.hasNext())
+		{
 			AbstractVCSTree item = it.next();
 			if(item.name.equals(name) && item.getType().equals(type))
+			{
 				return item;
+			}
 		}
 		return null;
 	}
@@ -236,5 +247,29 @@ public class VCSTree extends AbstractVCSTree{
 	
 	public ArrayList<AbstractVCSTree> getImmediateChildren(){
 		return immediateChildren;
+	}
+
+	public AbstractVCSTree findTreeIfExist(String relativePath, int index){
+		//System.out.println("reached "+relativePath);
+		String path[] = relativePath.split("/");
+		boolean lastElement = path.length - 1 == index ? true:false;
+		String currentEleType = lastElement? "blob" :"tree";
+		AbstractVCSTree ele = getIfExist(path[index],currentEleType);
+		if(ele != null)
+		{
+			if(ele.getType() == "tree")
+			{
+				ele = ((VCSTree)ele).findTreeIfExist(relativePath, index+1);
+				//System.out.println("in if"+ele.name);
+				return ele;
+			}
+			else
+			{
+				//System.out.println("in else"+ele.name);
+				return ele;
+			}
+		}
+		//System.out.println("before return"+ele.name);
+		return null;
 	}
 }

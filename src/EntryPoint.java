@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
 import com.diff.core.Diff;
 import com.diff.core.FileDiffResult;
 import com.diff.core.MergeResult;
@@ -18,23 +19,56 @@ public class EntryPoint
 	public static void main(String[] args)
 	{
 		String file1Contents, file2Contents,file3Contents;
-		file1Contents = readFileIntoString("C:/Users/Ambarish/Desktop/temp/1.txt");
-		file2Contents = readFileIntoString("C:/Users/Ambarish/Desktop/temp/1.txt");
+		//file1Contents = readFileIntoString("/home/ambarish/Desktop/temp/abc.txt");
+		file1Contents = "";
+		int totalLinesAdded=0,totalLinesDeleted=0;
+		file2Contents = readFileIntoString("/home/ambarish/Desktop/vcsdebug/2/2.cpp");
 		/*file2Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/1.txt");
 		file3Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/VCS/1.txt");*/
 		// System.out.println("here");
-		/*FileDiffResult result = null;
+		FileDiffResult result = null;
 		try 
 		{
-			result = Diff.diff(file1Contents, file2Contents, null, false);
+			Diff obj=new Diff();
+			result = obj.diff(file1Contents, file2Contents, null, false);
 			System.out.println(result.getLineResult().getNoOfLinesAdded() + " lines inserted ");
+			totalLinesAdded+=result.getLineResult().getNoOfLinesAdded();
+			totalLinesDeleted+=result.getLineResult().getNoOfLinesDeleted();
 			System.out.println(result.getLineResult().getNoOfLinesDeleted() + " lines deleted ");
-			System.out.println(result.getLineResult().getNoOfLinesUnmodified() + " lines unchanged ");
 		}
 		catch (Exception e) 
 		{
 			System.out.println("here");
-		}*/
+		}
+		file2Contents = readFileIntoString("/home/ambarish/Desktop/vcsdebug/1/1.cpp");
+		try 
+		{
+			Diff obj=new Diff();
+			result = obj.diff(file1Contents, file2Contents, null, false);
+			System.out.println(result.getLineResult().getNoOfLinesAdded() + " lines inserted ");
+			System.out.println(result.getLineResult().getNoOfLinesDeleted() + " lines deleted ");
+			totalLinesAdded+=result.getLineResult().getNoOfLinesAdded();
+			totalLinesDeleted+=result.getLineResult().getNoOfLinesDeleted();
+		}
+		catch (Exception e) 
+		{
+			System.out.println("here");
+		}
+		file2Contents = readFileIntoString("/home/ambarish/Desktop/vcsdebug/1.cpp");
+		try 
+		{
+			Diff obj=new Diff();
+			result = obj.diff(file1Contents, file2Contents, null, false);
+			System.out.println(result.getLineResult().getNoOfLinesAdded() + " lines inserted ");
+			System.out.println(result.getLineResult().getNoOfLinesDeleted() + " lines deleted ");
+			totalLinesAdded+=result.getLineResult().getNoOfLinesAdded();
+			totalLinesDeleted+=result.getLineResult().getNoOfLinesDeleted();
+		}
+		catch (Exception e) 
+		{
+			System.out.println("here");
+		}
+		System.out.println(totalLinesAdded+" "+totalLinesDeleted);
 		/*MergeResult mr=Diff.merge(file3Contents, file1Contents, file2Contents, null, false);
 		System.out.println(mr.getDefaultMergedResult());*/
 	}
