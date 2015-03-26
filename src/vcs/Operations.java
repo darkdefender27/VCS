@@ -5,14 +5,19 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.Timestamp;
+//import java.security.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Timer;
+//import java.util.Timer;
 
 import com.diff.core.Diff;
 import com.diff.core.FileDiffResult;
@@ -22,6 +27,7 @@ import objects.AbstractVCSTree;
 import objects.VCSBlob;
 import objects.VCSCommit;
 import objects.VCSTree;
+import network.HashUtil;
 
 public class Operations {
 
@@ -72,6 +78,17 @@ public class Operations {
 			}
 			else
 			{
+				String repoName = null;
+				String sample = vcsPath.toString();
+				String delims = "[/]";
+				String[] tokens = sample.split(delims);
+				
+				repoName = tokens[tokens.length - 1];
+				//VCSLogger.infoLogToCmd("Tokenized data: " + repoName + " Directory Absolute Path: " + vcsPath);
+				
+				//vcsPath is the absolute path to be mapped.
+				HashUtil.add(repoName, vcsPath.toString());
+
 				boolean vcsFolderCreated=new File(vcsPath.toString()).mkdir();
 				if(vcsFolderCreated)
 				{
@@ -252,6 +269,7 @@ public class Operations {
 		// TODO Auto-generated method stub
 		ArrayList<AbstractVCSTree> childrenArray = ((VCSTree)currentTree).getImmediateChildren();
 		ArrayList<AbstractVCSTree> parentArray = ((VCSTree)parentTree).getImmediateChildren();
+		@SuppressWarnings("unused")
 		Iterator<AbstractVCSTree> childArrayIterator = childrenArray.iterator();
 		Iterator<AbstractVCSTree> parentArrayIterator = parentArray.iterator();
 		
@@ -315,6 +333,37 @@ public class Operations {
 		}
 		return retVal;
 	}
+
+	//~~ Network Operation
+	public String clone(String repoUrl,String workDir){
+		URLConnection conn;
+		try {
+			conn = new URL(repoUrl + "?REQUEST=CLONE").openConnection();
+			//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
+			
+			//Receives Response from server (Check SimpleWebServer.java and stores in response InputStream)
+			InputStream response = conn.getInputStream();
+
+			// Code to see the content received from the server side.
+			FileOutputStream outStream = new FileOutputStream(new File(workDir + "vcs.txt"));
+			
+			byte buffer[] = new byte[8192];
+			while(response.read(buffer) > 0){
+				outStream.write(buffer);
+			}
+			outStream.close();
+			response.close();
+			
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	
 //	private void inorder(AbstractVCSTree currentTree,AbstractVCSTree parentTree){
 //		ArrayList<AbstractVCSTree> childrenArray = ((VCSTree)currentTree).getImmediateChildren();

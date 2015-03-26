@@ -8,10 +8,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Scanner;
 import logger.VCSLogger;
 import objects.AbstractVCSTree;
 import objects.VCSCommit;
-
+import network.NetworkOps;
+import network.SimpleWebServer;
 
 public class VCS {
 	
@@ -40,13 +42,34 @@ public class VCS {
 		//workDir is absolute
 		//String cmdArgs = "init /home/ambarish/Desktop/vcsdebug/";
 		//String cmdArgs = "add /home/ambarish/Desktop/vcsdebug/ *";
-		String cmdArgs = "commit /home/ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com initial";
+		//String cmdArgs = "commit /home/ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com initial";
 		
 		//String cmdArgs = "checkout /home/warrior/Downloads/VCSDebug/ e03c4cbb9a9ecc3e67afc039b3bad4f87048b395b37d5711984041663c2a4b";
-		args = cmdArgs.split(" ");
+		//args = cmdArgs.split(" ");
 		int argLength = args.length;
 		if( argLength >= 1){
 			Operations ops = new Operations();
+			
+			//~~ Network Operations.
+			if (args[0].equals("start-server") && argLength == 3){
+				NetworkOps netOps = new NetworkOps();
+				SimpleWebServer server = new SimpleWebServer(args[1],Integer.parseInt(args[2]),netOps);
+				try {
+					server.start();
+					System.out.println("Server started");
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				Scanner scanner = new Scanner(System.in);
+				if(scanner.nextInt() == 0) server.stop();
+				System.out.println("stopped");
+				scanner.close(); // Scanner was not closed.
+			}
+			if (args[0].equals("clone") && argLength == 3){
+				ops.clone(args[1],args[2]);
+			}
+			//~~
+			
 			if(args[0].equals("init") && argLength == 2){
 				//init workDir
 				if(!ops.initRepository(args[1]))
@@ -174,9 +197,7 @@ public class VCS {
 				}
 			}
 		}
-		
-		
-		
+			
 		
 		//ops.initRepository("./");
 		//String[] stagedFiles = {"root/new1/3.c","root/new1/new4/5.c","root/new2/1.c","root/new2/2.c"};
