@@ -37,6 +37,9 @@ public class VCS {
 
 	public static void main(String[] args)
 	{
+		String cmdArgs = "init /home/ambarish/Desktop/vcsdebug/";
+		//String cmdArgs = "add /home/ambarish/Desktop/vcsdebug/ *";
+		//String cmdArgs = "commit /home/ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com initial";
 		args = cmdArgs.split(" ");
 		int argLength = args.length;
 		if( argLength >= 1){

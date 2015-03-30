@@ -171,6 +171,15 @@ public class VCSCommit extends VCSObject
 			contentBuilder.append("\n");
 			contentBuilder.append(this.commitMessage);
 			
+			contentBuilder.append("\n");
+			contentBuilder.append(this.noOfLinesInserted);
+			
+			contentBuilder.append("\n");
+			contentBuilder.append(this.noOfLinesDeleted);
+			
+			contentBuilder.append("\n");
+			contentBuilder.append(this.commitTimestamp);
+			
 			return contentBuilder.toString();
 		}
 		return null;
