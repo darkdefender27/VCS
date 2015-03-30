@@ -2,6 +2,8 @@ package objects;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+
 import logger.VCSLogger;
 
 /**
@@ -44,7 +46,7 @@ public class VCSCommit extends VCSObject
 	/**
 	 * Parent commit. Null if no parent exist.
 	 */
-	private VCSCommit parentCommit;
+	//private VCSCommit parentCommit;
 	
 	/**
 	 * Holds committed tree pointer.
@@ -81,6 +83,7 @@ public class VCSCommit extends VCSObject
 	
 	private int importFlag = IMPORT_TREE;
 	
+	private ArrayList<VCSCommit> parents = new ArrayList<>();
 	/**
 	 * Create instance and generates SHA256 hash in process.
 	 * @param workingDirectory @see {@link VCSObject#workingDirectory}
@@ -94,7 +97,7 @@ public class VCSCommit extends VCSObject
 			String commitMessage, String author, String committer) 
 	{
 		super(workingDirectory);
-		this.parentCommit = parentCommit;
+		if(parentCommit != null) parents.add(parentCommit);
 		this.tree = tree;
 		this.commitMessage = commitMessage;
 		this.author = author;
@@ -141,31 +144,38 @@ public class VCSCommit extends VCSObject
 	public String getContent() 
 	{
 		/*
-		 * tree hash name path
-		 * parent(commit) hash
-		 * author name
-		 * committer name
+		 * tree~hash~name~path
+		 * Parents~#parents
+		 * parent~(commit)hash
+		 * ....
+		 * ....
+		 * author~name
+		 * committer~name
 		 * message
 		 */
 		if(tree !=null && commitMessage!=null && author!=null){
 
 			StringBuilder contentBuilder = new StringBuilder();
-			contentBuilder.append("tree ");
+			contentBuilder.append("tree"+SEPARATOR);
 			contentBuilder.append(tree.getObjectHash());
-			contentBuilder.append(" ");
+			contentBuilder.append(SEPARATOR);
 			contentBuilder.append(tree.getName());
-			contentBuilder.append(" ");
+			contentBuilder.append(SEPARATOR);
 			contentBuilder.append(tree.getPath());
 			
-			contentBuilder.append("\nparent ");
-			if(parentCommit!=null)
-			{
-				contentBuilder.append(parentCommit.getObjectHash());
+			contentBuilder.append("\nParents"+SEPARATOR);
+			contentBuilder.append(String.valueOf(parents.size()));
+			for(VCSCommit parentCommit: parents){
+				contentBuilder.append("\nparent"+SEPARATOR);
+				if(parentCommit!=null)
+				{
+					contentBuilder.append(parentCommit.getObjectHash());
+				}
 			}
-			contentBuilder.append("\nauthor ");
+			contentBuilder.append("\nauthor"+SEPARATOR);
 			contentBuilder.append(this.author);
 			
-			contentBuilder.append("\ncommitter ");
+			contentBuilder.append("\ncommitter"+SEPARATOR);
 			contentBuilder.append(this.committer);
 			
 			contentBuilder.append("\n");
@@ -192,35 +202,33 @@ public class VCSCommit extends VCSObject
 		if(content != null){
 			String[] commitItemsInString = content.split("\n");
 		
-			String[] treeFeatures = commitItemsInString[0].split(" ");
+			String[] treeFeatures = commitItemsInString[0].split(SEPARATOR);
 			
 			String tree = treeFeatures[1];
 			String treeName = treeFeatures[2];
 			String treePath = treeFeatures[3];
 			
-			String[] commitFeatures = commitItemsInString[1].split(" ");
-			String parentCommit = null;
-			if(commitFeatures.length != 1){
-				parentCommit = commitFeatures[1];
-			}
-			this.author = commitItemsInString[2].split(" ")[1];
-			this.committer = commitItemsInString[3].split(" ")[1];
-			this.commitMessage = commitItemsInString[4].split(" ")[0];
+			String parentsNumberFeatures[] = commitItemsInString[1].split(SEPARATOR);
 			
-			switch(importFlag){
-				case IMPORT_COMMITS:
-					if(parentCommit != null)
-						this.parentCommit = new VCSCommit(parentCommit, workingDirectory,IMPORT_COMMITS);
-					break;
-				case IMPORT_JUST_COMMIT:
-					this.tree = null;
-					this.parentCommit = null;
-					break;
-				default:
-					this.tree =new VCSTree(tree, workingDirectory,treePath,treeName);
-					break;
+			int numberOfParents = Integer.parseInt(parentsNumberFeatures[1]);
+			for(int i = 0;i<numberOfParents ;i++){
+				String[] commitFeatures = commitItemsInString[i+2].split(SEPARATOR);
+				String parentCommit = null;
+				if(commitFeatures.length != 1){
+					parentCommit = commitFeatures[1];
+					if(importFlag == IMPORT_COMMITS){
+						this.parents.add(
+								new VCSCommit(parentCommit, workingDirectory,IMPORT_COMMITS));
+					}
+				}
 			}
 			
+			this.author = commitItemsInString[numberOfParents + 2].split(SEPARATOR)[1];
+			this.committer = commitItemsInString[numberOfParents + 3].split(SEPARATOR)[1];
+			this.commitMessage = commitItemsInString[numberOfParents + 4].split(SEPARATOR)[0];
+			if(importFlag == IMPORT_TREE){
+				this.tree =new VCSTree(tree, workingDirectory,treePath,treeName);
+			}
 			return true;
 		}
 		return false;
@@ -235,9 +243,9 @@ public class VCSCommit extends VCSObject
 		VCSLogger.debugLogToCmd("VCSCommit#writeCommitToDisk", objectHash +" commit writtent to disk");
 		return status;
 	}
-
-	public VCSCommit getParentCommit() {
-		return parentCommit;
+	
+	public ArrayList<VCSCommit> getParentCommits() {
+		return parents;
 	}
 
 	public VCSTree getTree() {
@@ -264,6 +272,7 @@ public class VCSCommit extends VCSObject
 		this.commitTimestamp = commitTimestamp;
 	}
 	
-	
-	
+	public void addParent(VCSCommit parent){
+		parents.add(parent);
+	}
 }

@@ -30,10 +30,12 @@ public class VCSTree extends AbstractVCSTree{
 		super(objectHash,workingDirectory,diskPath,name);
 		immediateChildren = new ArrayList<AbstractVCSTree>();
 		this.type = "tree";
+		generatingFromHash = true;
 		createInMemory();
 		VCSLogger.debugLogToCmd("VCSTree#", diskPath +" tree restored");
 	}
 	
+	private boolean generatingFromHash;
 	/**
 	 * Creates instance from unhashed folder entity.
 	 * Note:SHA256 hash calculation is responsibility class client.
@@ -81,7 +83,9 @@ public class VCSTree extends AbstractVCSTree{
 		if(immediateChildren!=null)
 		{
 			immediateChildren.add(element);
-			generateTreeHash();
+			if(!generatingFromHash){
+				generateTreeHash();
+			}
 			return true;
 		}
 		return false;
@@ -95,8 +99,8 @@ public class VCSTree extends AbstractVCSTree{
 	public String getContent() 
 	{
 		/*
-		 * hash type name
-		 * hash type name
+		 * hash~type~name
+		 * hash~type~name
 		 * ..
 		 * .
 		 */
@@ -129,7 +133,7 @@ public class VCSTree extends AbstractVCSTree{
 		//createInMemory();
 		//System.out.println(immediateChildren.size());
 		File selfFolder = new File(diskPath);
-		if(!selfFolder.mkdir()) return false;
+		selfFolder.mkdir();
 		Iterator<AbstractVCSTree> it = immediateChildren.listIterator();
 		while(it.hasNext())
 		{
@@ -194,7 +198,7 @@ public class VCSTree extends AbstractVCSTree{
 		String objectType =null;
 		AbstractVCSTree object =null;
 		for(int i=0;i<treeItemsInString.length;i++){
-			objectFeatures= treeItemsInString[i].split(" ");
+			objectFeatures= treeItemsInString[i].split(SEPARATOR);
 			objectHash = objectFeatures[0];
 			objectType = objectFeatures[1];
 			objectName = objectFeatures[2];

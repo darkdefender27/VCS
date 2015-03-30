@@ -37,10 +37,9 @@ public class VCS {
 
 	public static void main(String[] args)
 	{
-		String cmdArgs = "init /home/ambarish/Desktop/vcsdebug/";
-		//String cmdArgs = "add /home/ambarish/Desktop/vcsdebug/ *";
-		//String cmdArgs = "commit /home/ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com initial";
 		args = cmdArgs.split(" ");
+		args[1] = replaceHashWithSpace(args[1]);
+		boolean flag = false;
 		int argLength = args.length;
 		if( argLength >= 1){
 			Operations ops = new Operations();
@@ -119,9 +118,10 @@ public class VCS {
 				Iterator<AbstractVCSTree> it = commit.getTree().getImmediateChildren().listIterator();
 				//VCSLogger.debugLogToCmd("VCS#MAIN#checkout",commit.getTree().printTree(0));
 				//VCSLogger.debugLogToCmd("VCS#MAIN#checkout", "Tree Printed");
-				while(it.hasNext() && status)
+				while(it.hasNext())
 				{
 					status = (it.next()).writeOriginalToDisk();
+					if(!status) break;
 				}
 				if(status) VCSLogger.infoLogToCmd("Successfully checked out");
 			}
@@ -170,7 +170,68 @@ public class VCS {
 					VCSLogger.infoLogToCmd("No files staged to commit");
 				}
 			}
+			if(args[0].equals("create") && args[1].equals("branch") && argLength == 4)
+			{
+				String branchName = args[2];
+				String commitHash = args[3];
+				try {
+					flag = ops.createBranch(branchName,commitHash,workDir);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				if(flag)
+				{
+					System.out.println("Branch created successfully");
+				}
+				
+			}
+			if(args[0].equals("switch") && args[1].equals("branch") && argLength == 3)
+			{
+				String branchName = args[2];
+				try {
+					flag = ops.switchBranch(branchName,workDir);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				if(flag)
+				{
+					System.out.println("Branch switched successfully");
+				}
+			}
+			if(args[0].equals("merge") && args[1].equals("branch") && argLength == 4)
+			{
+				String firstBranchName = args[2];
+				String secondBranchName = args[3];
+				try {
+					flag = ops.mergeBranch(workDir, firstBranchName,secondBranchName);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				System.out.println("inside merge");
+				if(flag)
+				{
+					System.out.println("Branch merged successfully");
+				}
+				
+			}
+
 		}
+	}
+	public static String replaceHashWithSpace(String arg)
+	{
+		char[] tmp = arg.toCharArray();
+		int stringLength = arg.length();
+		for(int i=0;i<stringLength;i++)
+		{
+			if(tmp[i]=='#')
+			{
+				tmp[i]=' ';
+			}
+		}
+		String retval = new String(tmp);
+		return retval;
 	}
 
 	/*
