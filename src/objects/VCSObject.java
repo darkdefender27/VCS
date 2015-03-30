@@ -177,5 +177,5 @@ public abstract class VCSObject {
 		this.workingDirectory = workingDirectory;
 	}
 	
-	
+	protected final static String SEPARATOR = "~";
 }

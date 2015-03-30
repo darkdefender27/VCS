@@ -73,15 +73,15 @@ public abstract class AbstractVCSTree extends VCSObject
 	 * @return String Format "objectHash type name"
 	 */
 	public String toString(){
-		//return format -> hash type name
+		//return format -> hash~type~name
 		if(name!=null && diskPath!=null){
 			StringBuilder contentbuilder = new StringBuilder();
 			
 			contentbuilder.append(this.getObjectHash());
-			contentbuilder.append(" ");
+			contentbuilder.append(SEPARATOR);
 			
 			contentbuilder.append(this.getType());
-			contentbuilder.append(" ");
+			contentbuilder.append(SEPARATOR);
 			
 			contentbuilder.append(this.name);
 			return contentbuilder.toString();

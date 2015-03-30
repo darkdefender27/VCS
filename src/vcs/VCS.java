@@ -192,7 +192,6 @@ public class VCS {
 				try {
 					flag = ops.switchBranch(branchName,workDir);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				if(flag)
