@@ -34,7 +34,7 @@ public abstract class AbstractVCSTree extends VCSObject
 		this.objectHash = objectHash;
 		this.diskPath = diskPath;
 		this.name = name;
-		this.relativePath = this.diskPath.substring(this.workingDirectory.length()-1, this.diskPath.length());
+		this.relativePath = this.diskPath.substring(this.workingDirectory.length(), this.diskPath.length());
 	}
 	/**
 	 * Creates instance from <code>entity</code> which was stored on disk.

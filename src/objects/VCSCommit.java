@@ -144,7 +144,7 @@ public class VCSCommit extends VCSObject
 	public String getContent() 
 	{
 		/*
-		 * tree~hash~name~path
+		 * tree~hash~name~relativePath
 		 * Parents~#parents
 		 * parent~(commit)hash
 		 * ....
@@ -161,7 +161,7 @@ public class VCSCommit extends VCSObject
 			contentBuilder.append(SEPARATOR);
 			contentBuilder.append(tree.getName());
 			contentBuilder.append(SEPARATOR);
-			contentBuilder.append(tree.getPath());
+			contentBuilder.append(tree.getRelativePath());
 			
 			contentBuilder.append("\nParents"+SEPARATOR);
 			contentBuilder.append(String.valueOf(parents.size()));
@@ -206,7 +206,7 @@ public class VCSCommit extends VCSObject
 			
 			String tree = treeFeatures[1];
 			String treeName = treeFeatures[2];
-			String treePath = treeFeatures[3];
+			String treeRelativePath = treeFeatures[3];
 			
 			String parentsNumberFeatures[] = commitItemsInString[1].split(SEPARATOR);
 			
@@ -226,8 +226,11 @@ public class VCSCommit extends VCSObject
 			this.author = commitItemsInString[numberOfParents + 2].split(SEPARATOR)[1];
 			this.committer = commitItemsInString[numberOfParents + 3].split(SEPARATOR)[1];
 			this.commitMessage = commitItemsInString[numberOfParents + 4].split(SEPARATOR)[0];
+			this.noOfLinesInserted = Integer.parseInt(commitItemsInString[numberOfParents + 5].split(SEPARATOR)[0]);
+			this.noOfLinesDeleted = Integer.parseInt(commitItemsInString[numberOfParents + 6].split(SEPARATOR)[0]);
+			this.commitTimestamp = Long.parseLong(commitItemsInString[numberOfParents + 7].split(SEPARATOR)[0]);
 			if(importFlag == IMPORT_TREE){
-				this.tree =new VCSTree(tree, workingDirectory,treePath,treeName);
+				this.tree =new VCSTree(tree, workingDirectory,workingDirectory + treeRelativePath,treeName);
 			}
 			return true;
 		}
