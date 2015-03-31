@@ -72,7 +72,8 @@ public class Diff {
 	}
 	
 	
-	/*
+	
+	@SuppressWarnings("unused")
 	private static void viewResults(FileDiffResult result,ParsedFile leftFile,ParsedFile rightFile)
 	{
 		int i=0,max;
@@ -82,20 +83,19 @@ public class Diff {
 		//System.out.println("right length "+rightFile.getLines().length);
 		while(i<max)
 		{
-			//System.out.print((i+1)+"     ");
+			System.out.print((i+1)+"     ");
 			if(i<result.getLeftFile().getLines().length)
 			{
-				//System.out.print("left     "+FileLine.statusToString(result.getLeftFile().getLines()[i].getStatus()));
+				System.out.print("left     "+FileLine.statusToString(result.getLeftFile().getLines()[i].getStatus()));
 			}
 			if(i<result.getRightFile().getLines().length)
 			{
-				//System.out.print("     right     "+FileLine.statusToString(result.getRightFile().getLines()[i].getStatus()));
+				System.out.print("     right     "+FileLine.statusToString(result.getRightFile().getLines()[i].getStatus()));
 			}
-			//System.out.println("");
+			System.out.println("");
 			i++;
 		}
 	}
-	*/
 	
 	public static FileDiffResult quickDiff(String leftFileContent, String rightFileContent, boolean ignoreLeadingSpaces) {
 		ParsedFile leftFile = new ParsedFile(leftFileContent);

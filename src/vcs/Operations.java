@@ -9,10 +9,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Timer;
 
 import com.diff.core.Diff;
 import com.diff.core.FileDiffResult;
@@ -182,7 +180,7 @@ public class Operations {
 			StringBuilder overallPath = new StringBuilder();
 			String[] path = stagedFiles[i].split("/");
 			overallPath.append(workingDir);
-
+			System.out.println("overall path" +overallPath);
 				for(int j=0;j<path.length;j++)
 				{
 					if(j != 0)
@@ -239,11 +237,14 @@ public class Operations {
 					noOfLinesDeleted+=result.getLineResult().getNoOfLinesDeleted();
 					noOflinesInserted+=result.getLineResult().getNoOfLinesAdded();
 					result=null;
+					File f=new File(fullFileName);
+					f.delete();
 				}
 				else
 				{
 					Diff diffObj=new Diff();
 					FileDiffResult result=diffObj.diff("",readFileIntoString(workingDir+stagedFiles[i]), null, false);
+					result.getLineResult().setNoOfLinesDeleted(result.getLineResult().getNoOfLinesDeleted()-1);
 					noOfLinesDeleted+=result.getLineResult().getNoOfLinesDeleted();
 					noOflinesInserted+=result.getLineResult().getNoOfLinesAdded();
 					result=null;
@@ -252,7 +253,10 @@ public class Operations {
 			else if(parentCommit==null)
 			{
 				Diff diffObj=new Diff();
+				
 				FileDiffResult result=diffObj.diff("",readFileIntoString(workingDir+stagedFiles[i]), null, false);
+				result.getLineResult().setNoOfLinesDeleted(result.getLineResult().getNoOfLinesDeleted()-1);
+				//System.out.println("stagedfiles[i] "+stagedFiles[i] +" deleted "+result.getLineResult().getNoOfLinesDeleted());
 				noOfLinesDeleted+=result.getLineResult().getNoOfLinesDeleted();
 				noOflinesInserted+=result.getLineResult().getNoOfLinesAdded();
 				result=null;
@@ -332,6 +336,7 @@ public class Operations {
 	public static String readFileIntoString(String completeFileName) {
 		String retVal = null;
 		try {
+			//System.out.println("complete file name" +completeFileName);
 			retVal = new String(Files.readAllBytes(Paths.get(completeFileName)));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

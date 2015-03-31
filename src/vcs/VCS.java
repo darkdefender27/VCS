@@ -25,8 +25,16 @@ public class VCS {
 	    {
 	        if (file.isFile()) 
 	        {
+	        	//System.out.println("dirName " +directoryName +" iniworkingDir "+initialWorkingDir);
 	        	String tempAbsPath=file.getAbsolutePath();
-				files.add(tempAbsPath.replace(initialWorkingDir,""));
+	        	if(tempAbsPath.contains("\\"))
+	        	{
+	        		tempAbsPath=tempAbsPath.replace("\\", "/");
+	        	}
+	        	//System.out.println("tempabspath " + tempAbsPath);
+	        	String temp=tempAbsPath.replace(initialWorkingDir,"");
+	        	//System.out.println("temp is "+temp);
+				files.add(temp);
 	        }
 	        else if (file.isDirectory() && !(file.getName().startsWith("."))) 
 	        {
@@ -37,6 +45,9 @@ public class VCS {
 
 	public static void main(String[] args)
 	{
+		//String cmdArgs = "init C:/Users/Ambarish/Desktop/vcsdebug/";
+		//String cmdArgs = "add C:/Users/Ambarish/Desktop/vcsdebug/ *";
+		String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com initial";
 		args = cmdArgs.split(" ");
 		args[1] = replaceHashWithSpace(args[1]);
 		boolean flag = false;
@@ -80,6 +91,7 @@ public class VCS {
 									bufferWritter.write("\n");
 								}
 							}
+							//System.out.println("checking for abs or rel "+allFiles.get(i));
 				    	    bufferWritter.write(allFiles.get(i));
 				    	    VCSLogger.infoLogToCmd(allFiles.get(i)+" added to staging area");
 							i++;
@@ -175,6 +187,7 @@ public class VCS {
 				String branchName = args[2];
 				String commitHash = args[3];
 				try {
+					String workDir = args[1];
 					flag = ops.createBranch(branchName,commitHash,workDir);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
@@ -190,6 +203,7 @@ public class VCS {
 			{
 				String branchName = args[2];
 				try {
+					String workDir = args[1];
 					flag = ops.switchBranch(branchName,workDir);
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -204,6 +218,7 @@ public class VCS {
 				String firstBranchName = args[2];
 				String secondBranchName = args[3];
 				try {
+					String workDir = args[1];
 					flag = ops.mergeBranch(workDir, firstBranchName,secondBranchName);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block

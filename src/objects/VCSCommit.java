@@ -226,6 +226,9 @@ public class VCSCommit extends VCSObject
 			this.author = commitItemsInString[numberOfParents + 2].split(SEPARATOR)[1];
 			this.committer = commitItemsInString[numberOfParents + 3].split(SEPARATOR)[1];
 			this.commitMessage = commitItemsInString[numberOfParents + 4].split(SEPARATOR)[0];
+			this.noOfLinesInserted=Integer.parseInt(commitItemsInString[numberOfParents + 5].split(SEPARATOR)[0]);
+			this.noOfLinesDeleted=Integer.parseInt(commitItemsInString[numberOfParents + 6].split(SEPARATOR)[0]);
+			this.commitTimestamp=Long.parseLong(commitItemsInString[numberOfParents + 7].split(SEPARATOR)[0]);
 			if(importFlag == IMPORT_TREE){
 				this.tree =new VCSTree(tree, workingDirectory,treePath,treeName);
 			}
