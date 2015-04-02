@@ -40,7 +40,7 @@ public class VCS {
 	public static void main(String[] args)
 	{
 		//workDir is absolute
-		//String cmdArgs = "init /home/ambarish/Desktop/vcsdebug/";
+		//String cmdArgs = "init /home/shubham/VCSTemp/Garbage/vcsd1/";
 		//String cmdArgs = "add /home/ambarish/Desktop/vcsdebug/ *";
 		//String cmdArgs = "commit /home/ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com initial";
 		

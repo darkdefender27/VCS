@@ -1,6 +1,6 @@
 package objects;
 
-import java.util.Iterator;
+//import java.util.Iterator;
 
 /**
  * <code>Abstract</code> class for holding object that represent some entity on disk.
