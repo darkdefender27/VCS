@@ -8,10 +8,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Scanner;
 import logger.VCSLogger;
 import objects.AbstractVCSTree;
 import objects.VCSCommit;
-
+import network.NetworkOps;
+import network.SimpleWebServer;
 
 public class VCS {
 	
@@ -45,15 +47,33 @@ public class VCS {
 
 	public static void main(String[] args)
 	{
-		//String cmdArgs = "init C:/Users/Ambarish/Desktop/vcsdebug/";
-		//String cmdArgs = "add C:/Users/Ambarish/Desktop/vcsdebug/ *";
-		String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com initial";
-		args = cmdArgs.split(" ");
-		args[1] = replaceHashWithSpace(args[1]);
+		//args = cmdArgs.split(" ");
+		//args[1] = replaceHashWithSpace(args[1]);
 		boolean flag = false;
 		int argLength = args.length;
 		if( argLength >= 1){
 			Operations ops = new Operations();
+			
+			//~~ Network Operations.
+			if (args[0].equals("start-server") && argLength == 3){
+				NetworkOps netOps = new NetworkOps();
+				SimpleWebServer server = new SimpleWebServer(args[1],Integer.parseInt(args[2]),netOps);
+				try {
+					server.start();
+					System.out.println("Server started");
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				Scanner scanner = new Scanner(System.in);
+				if(scanner.nextInt() == 0) server.stop();
+				System.out.println("stopped");
+				scanner.close(); // Scanner was not closed.
+			}
+			if (args[0].equals("clone") && argLength == 3){
+				ops.clone(args[1],args[2]);
+			}
+			//~~
+			
 			if(args[0].equals("init") && argLength == 2){
 				//init workDir
 				if(!ops.initRepository(args[1]))

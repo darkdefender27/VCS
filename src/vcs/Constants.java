@@ -56,6 +56,11 @@ public class Constants {
 	 * <code>Name</code> of the folder where <code>tags</code> temporary files will be stored on the disk.
 	 */
 	public static String TEMP_FOLDER="temp";
+	/**
+	 * <code>Name</code> of the folder where <code>configuration</code> data will be stored on disk.
+	 */
+	public static String CONFIG_FOLDER="config";
+	
 	
 	/**
 	 * <code>Private</code> so that no one creates its instance.
