@@ -10,6 +10,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -18,7 +19,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 //import java.security.Timestamp;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 //import java.util.Properties;
 //import java.util.Timer;
 
@@ -425,9 +429,15 @@ public class Operations {
 		try {
 			conn = new URL(repoUrl + "?REQUEST=CLONE").openConnection();
 			//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
+			conn.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
+			conn.setRequestProperty("Accept","*/*");
 			
 			//Receives Response from server (Check SimpleWebServer.java and stores in response InputStream)
-			InputStream response = conn.getInputStream();
+			//InputStream response = conn.getInputStream();
+			
+			int status = ((HttpURLConnection) conn).getResponseCode();
+			
+			VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
 			
 			/*FileOutputStream fos = new FileOutputStream(file);
 			byte[] bytes = new byte[1024];
@@ -447,7 +457,7 @@ public class Operations {
 			 * config:
 			 * [remote 'origin'] url = repoUrl or http://127.0.0.1:8080/VCSD_1_1.vcs
 			 */
-
+			/*
 			boolean writeStatus = writeCloneConfig(workDir, repoUrl);
 			if(writeStatus){
 				VCSLogger.infoLogToCmd("CONFIG WRITE SUCCESS.");
@@ -455,19 +465,68 @@ public class Operations {
 			else {
 				VCSLogger.infoLogToCmd("CONFIG WRITE FAILURE.");
 			}
+			*/
+			String userHomeDir = System.getProperty("user.home");
+			
+			String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
+			String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
+
+			String fileName = userHomeDir + "/" + fileNameWithoutExtn + ".zip";
+			
+			VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + fileName);
+			
+			try {
+				ZipFile zipFile = new ZipFile(fileName);
+				Enumeration<?> enu = zipFile.entries();
+				while (enu.hasMoreElements()) {
+					ZipEntry zipEntry = (ZipEntry) enu.nextElement();
+
+					String name = zipEntry.getName();
+					long size = zipEntry.getSize();
+					long compressedSize = zipEntry.getCompressedSize();
+					System.out.printf("name: %-20s | size: %6d | compressed size: %6d\n", 
+							name, size, compressedSize);
+
+					File file = new File(name);
+					if (name.endsWith("/")) {
+						file.mkdirs();
+						continue;
+					}
+
+					File parent = file.getParentFile();
+					if (parent != null) {
+						parent.mkdirs();
+					}
+
+					InputStream is = zipFile.getInputStream(zipEntry);
+					FileOutputStream fos = new FileOutputStream(file);
+					byte[] bytes = new byte[1024];
+					int length;
+					while ((length = is.read(bytes)) >= 0) {
+						fos.write(bytes, 0, length);
+					}
+					is.close();
+					fos.close();
+
+				}
+				zipFile.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			
 			/* Code to see the content received from the server side.
-			FileOutputStream outStream = new FileOutputStream(new File(workDir + "vcs.txt"));
+			FileOutputStream outStream = new FileOutputStream(new File(workDir));
 			
 			byte buffer[] = new byte[8192];
 			while(response.read(buffer) > 0){
 				outStream.write(buffer);
 			}
-			outStream.close();
-			*/
+			outStream.close();	
 			response.close();
+			*/
 			
-		} catch (MalformedURLException e) {
+		} 
+		catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {

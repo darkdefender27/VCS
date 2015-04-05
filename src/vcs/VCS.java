@@ -43,6 +43,7 @@ public class VCS {
 		//String cmdArgs = "init /home/shubham/VCSTemp/Garbage/vcsd1/";
 		//String cmdArgs = "add /home/ambarish/Desktop/vcsdebug/ *";
 		//String cmdArgs = "commit /home/ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com initial";
+		//java -jar vcs_net_1_3.jar clone http://127.0.0.1:8009/vcsd1.vcs /home/shubham/Desktop/ (clone source_url desktop)
 		
 		//String cmdArgs = "checkout /home/warrior/Downloads/VCSDebug/ e03c4cbb9a9ecc3e67afc039b3bad4f87048b395b37d5711984041663c2a4b";
 		//args = cmdArgs.split(" ");

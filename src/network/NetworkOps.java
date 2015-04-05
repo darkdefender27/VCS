@@ -29,7 +29,6 @@ public class NetworkOps {
         		String parts[] = line.split(" ");
         	    if(repoName.equals(parts[0])) {
         	    	SOURCE_FOLDER = parts[1];
-        	    	VCSLogger.infoLogToCmd("Source Folder: " + parts[1]);
         	    }
         	}
         	
@@ -53,7 +52,7 @@ public class NetworkOps {
     		List<File> fileList = new ArrayList<File>();
 
     		ZipDirectory.getAllFiles(directoryToZip, fileList);
-    		ZipDirectory.writeZipFile(f, fileList);
+    		ZipDirectory.writeZipFile(directoryToZip, fileList);
     		VCSLogger.infoLogToCmd("---Done");     	
     	}
     	else {
