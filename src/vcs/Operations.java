@@ -3,9 +3,13 @@ package vcs;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -274,6 +278,13 @@ public class Operations {
 		VCSCommit iniCommit = new VCSCommit(workingDir, parentCommit, workDir, message, author, committer);
 		iniCommit.setNoOfLinesInserted(noOflinesInserted);
 		iniCommit.setNoOfLinesDeleted(noOfLinesDeleted);
+		
+		
+		String branchName=getCurrentBranchName(workingDir);
+		iniCommit.setBranchName(branchName);
+		
+		
+		System.out.println("branchName= "+iniCommit.getBranchName());
 		System.out.println("lines added " +noOflinesInserted+" lines deleted "+noOfLinesDeleted);
 		iniCommit.setCommitTimestamp(System.currentTimeMillis());
 		iniCommit.writeCommitToDisk();
@@ -333,6 +344,87 @@ public class Operations {
 
 	}
 
+	public String getCurrentBranchName(String workingDir)
+	{
+		String head;
+		try 
+		{
+			VCSCommit temp=getHead(workingDir);
+			if(temp!=null)
+			{
+				head=temp.getObjectHash();
+				System.out.println("head =" +head);
+			}
+			else
+			{
+				head=null;
+				throw new NullPointerException();
+			}
+		} 
+		catch (IOException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			head=null;
+		}
+		ArrayList<String> branchHeads=new ArrayList<String>();
+		String branchesFolder=workingDir+"/" +Constants.VCSFOLDER +"/" +Constants.BRANCH_FOLDER;
+		String branchName=null;
+		listAllFiles(branchesFolder, branchHeads, branchesFolder);
+		int size=branchHeads.size();
+		boolean done=false;
+		if(head!=null && branchHeads!=null && size>0)
+		{
+			int i=0;
+			while(i<size && done==false)
+			{
+				File f=new File(branchHeads.get(i));
+				if(f.exists())
+				{
+					BufferedReader br;
+					try 
+					{
+						br = new BufferedReader(new FileReader(f));
+					}
+					catch (FileNotFoundException e) 
+					{
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+						br=null;
+					}
+					String line;
+					try 
+					{
+						while((line=br.readLine())!=null)
+						{
+							if(line.equals(head))
+							{
+								branchName=f.getName();
+								done=true;
+							}
+						}
+					}
+					catch (IOException e) 
+					{
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+						branchName=null;
+					}
+				}
+				i++;
+			}
+			if(branchName==null)
+			{
+				throw new NullPointerException();
+			}
+		}
+		else
+		{
+			branchName= "master";
+		}
+		return branchName;
+	}
+	
 	public static String readFileIntoString(String completeFileName) {
 		String retVal = null;
 		try {
@@ -570,6 +662,9 @@ public class Operations {
 		//String workingDirectory = "/home/rounak/final year project/VCS v1.5.0/VCSDebug/";
 		//String branchDir = "/home/rounak/final year project/VCS v1.5.0/VCSDebug/.vcs/branches";
 		String branchDir = workingDirectory + ".vcs/branches";
+		
+		System.out.println("create branch dir "+branchDir);
+		
 		File f = new File(branchDir);
 	    File[] files  = f.listFiles();
 	    int flag = 1;
@@ -607,5 +702,31 @@ public class Operations {
 	    }
 	    return retval;
 	}
+	
+	private void listAllFiles(String directoryName, ArrayList<String> files,String initialWorkingDir) {
+	    File directory = new File(directoryName);
 
+	    // get all the files from a directory
+	    File[] fList = directory.listFiles();
+	    for (File file : fList) 
+	    {
+	        if (file.isFile()) 
+	        {
+	        	//System.out.println("dirName " +directoryName +" iniworkingDir "+initialWorkingDir);
+	        	String tempAbsPath=file.getAbsolutePath();
+	        	if(tempAbsPath.contains("\\"))
+	        	{
+	        		tempAbsPath=tempAbsPath.replace("\\", "/");
+	        	}
+	        	//System.out.println("tempabspath " + tempAbsPath);
+	        	String temp=tempAbsPath.replace(initialWorkingDir,"");
+	        	//System.out.println("temp is "+temp);
+				files.add(temp);
+	        }
+	        else if (file.isDirectory() && !(file.getName().startsWith("."))) 
+	        {
+	        	listAllFiles(file.getAbsolutePath(), files,initialWorkingDir);
+	        }
+	    }
+	}
 }

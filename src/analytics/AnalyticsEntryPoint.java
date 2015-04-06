@@ -135,6 +135,11 @@ public class AnalyticsEntryPoint{
 				if(e.getSource().equals(okButton))
 				{
 					System.out.println(selectLabel.getText() +" " +xAxisComboBox.getSelectedItem().toString() +" " +versusLabel.getText() +" " +yAxisComboBox.getSelectedItem().toString() +" "+whereLabel.getText() +" "+extraParametersComboBox.getSelectedItem().toString() +" = "+extraValuesComboBox.getSelectedItem().toString());
+					String query=selectLabel.getText() +" " +xAxisComboBox.getSelectedItem().toString() +" " +versusLabel.getText() +" " +yAxisComboBox.getSelectedItem().toString();
+					if(query.equals("select no of commits vs week"))
+					{
+						
+					}
 				}
 			}
 		});

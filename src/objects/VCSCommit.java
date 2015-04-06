@@ -43,6 +43,12 @@ public class VCSCommit extends VCSObject
 	 * the time of the commit
 	 */
 	private long commitTimestamp;
+	
+	/**
+	 * the branch to which the commit belongs 
+	 */
+	private String branchName;
+	
 	/**
 	 * Parent commit. Null if no parent exist.
 	 */
@@ -190,6 +196,8 @@ public class VCSCommit extends VCSObject
 			contentBuilder.append("\n");
 			contentBuilder.append(this.commitTimestamp);
 			
+			contentBuilder.append("\n");
+			contentBuilder.append(this.branchName);
 			return contentBuilder.toString();
 		}
 		return null;
@@ -230,6 +238,7 @@ public class VCSCommit extends VCSObject
 			this.noOfLinesInserted=Integer.parseInt(commitItemsInString[numberOfParents + 5].split(SEPARATOR)[0]);
 			this.noOfLinesDeleted=Integer.parseInt(commitItemsInString[numberOfParents + 6].split(SEPARATOR)[0]);
 			this.commitTimestamp=Long.parseLong(commitItemsInString[numberOfParents + 7].split(SEPARATOR)[0]);
+			this.branchName=commitItemsInString[numberOfParents+8].split(SEPARATOR)[0];
 			if(importFlag == IMPORT_TREE){
 				this.tree =new VCSTree(tree, workingDirectory,workingDirectory + treeRelativePath,treeName);
 			}
@@ -278,5 +287,13 @@ public class VCSCommit extends VCSObject
 	
 	public void addParent(VCSCommit parent){
 		parents.add(parent);
+	}
+
+	public String getBranchName() {
+		return branchName;
+	}
+
+	public void setBranchName(String branchName) {
+		this.branchName = branchName;
 	}
 }

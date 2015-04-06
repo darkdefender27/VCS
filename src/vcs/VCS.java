@@ -46,8 +46,10 @@ public class VCS {
 	public static void main(String[] args)
 	{
 		//String cmdArgs = "init C:/Users/Ambarish/Desktop/vcsdebug/";
-		//String cmdArgs = "add C:/Users/Ambarish/Desktop/vcsdebug/ *";
-		String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com initial";
+		String cmdArgs = "add C:/Users/Ambarish/Desktop/vcsdebug/ *";
+		//String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com B2_initial";
+		//String cmdArgs = "create C:/Users/Ambarish/Desktop/vcsdebug/ branch b2 ad3b7a96a337c214bd68375c130baa6f76527a17e8cfd3f69aaf1ffbd4fffd";
+		//String cmdArgs ="switch C:/Users/Ambarish/Desktop/vcsdebug/ branch b1";
 		args = cmdArgs.split(" ");
 		args[1] = replaceHashWithSpace(args[1]);
 		boolean flag = false;
@@ -61,7 +63,8 @@ public class VCS {
 					VCSLogger.infoLogToCmd("Unable to initialise repository");
 				}
 			}
-			if(args[0].equals("add") && argLength == 3){
+			if(args[0].equals("add") && argLength == 3)
+			{
 				//add workDir stagedFile
 				String workingDir = args[1];
 				String stagedFile = args[2];
@@ -182,13 +185,19 @@ public class VCS {
 					VCSLogger.infoLogToCmd("No files staged to commit");
 				}
 			}
-			if(args[0].equals("create") && args[1].equals("branch") && argLength == 4)
+			if(args[0].equals("create") && args[2].equals("branch") && argLength == 5)
 			{
-				String branchName = args[2];
-				String commitHash = args[3];
+				String branchName = args[3];
+				String commitHash = args[4];
+				String workingDir=args[1];
 				try {
-					String workDir = args[1];
-					flag = ops.createBranch(branchName,commitHash,workDir);
+					if(workingDir.contains("\\"))
+					{
+						workingDir=workingDir.replace("\\", "/");
+						System.out.println("create section " +workingDir);
+					}
+					System.out.println("create section " +workingDir);
+					flag = ops.createBranch(branchName,commitHash,workingDir);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -199,9 +208,9 @@ public class VCS {
 				}
 				
 			}
-			if(args[0].equals("switch") && args[1].equals("branch") && argLength == 3)
+			if(args[0].equals("switch") && args[2].equals("branch") && argLength == 4)
 			{
-				String branchName = args[2];
+				String branchName = args[3];
 				try {
 					String workDir = args[1];
 					flag = ops.switchBranch(branchName,workDir);
