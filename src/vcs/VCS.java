@@ -48,11 +48,11 @@ public class VCS {
 	public static void main(String[] args)
 	{
 		//String cmdArgs = "init C:/Users/Ambarish/Desktop/vcsdebug/";
-		String cmdArgs = "add C:/Users/Ambarish/Desktop/vcsdebug/ *";
+		//String cmdArgs = "add C:/Users/Ambarish/Desktop/vcsdebug/ *";
 		//String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com B2_initial";
 		//String cmdArgs = "create C:/Users/Ambarish/Desktop/vcsdebug/ branch b2 ad3b7a96a337c214bd68375c130baa6f76527a17e8cfd3f69aaf1ffbd4fffd";
 		//String cmdArgs ="switch C:/Users/Ambarish/Desktop/vcsdebug/ branch b1";
-		args = cmdArgs.split(" ");
+		//args = cmdArgs.split(" ");
 		args[1] = replaceHashWithSpace(args[1]);
 		//args = cmdArgs.split(" ");
 		//args[1] = replaceHashWithSpace(args[1]);

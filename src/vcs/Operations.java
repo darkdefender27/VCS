@@ -844,20 +844,9 @@ public class Operations {
 			conn.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
 			conn.setRequestProperty("Accept","*/*");
 			
-			//Receives Response from server (Check SimpleWebServer.java and stores in response InputStream)
-			//InputStream response = conn.getInputStream();
-			
 			int status = ((HttpURLConnection) conn).getResponseCode();
 			
 			VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
-			
-			/*FileOutputStream fos = new FileOutputStream(file);
-			byte[] bytes = new byte[1024];
-			int length;
-			while ((length = response.read(bytes)) >= 0) {
-				fos.write(bytes, 0, length);
-			}
-			fos.close();*/
 			
 			/** 
 			 * NanoHttpd serve() is automatically called 
@@ -878,20 +867,16 @@ public class Operations {
 				VCSLogger.infoLogToCmd("CONFIG WRITE FAILURE.");
 			}
 			*/
-			//String userHomeDir = System.getProperty("user.home");
+			
+			// ~UNZIP CODE
 			
 			String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
 			String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
 
 			String userWorkDir = System.getProperty("user.dir");
-			String fileName = userWorkDir + "/" + fileNameWithoutExtn + ".zip";
+			String filename = userWorkDir + "/" + fileNameWithoutExtn + ".zip";
 			
-			VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + fileName);
-			
-			
-			//Network Unzip file.
-			
-			String filename = fileName;
+			VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + filename);
 			
 			File srcFile = new File(filename);
 			
@@ -961,57 +946,8 @@ public class Operations {
 				 }
 			 }
 			
-			/*try {
-				ZipFile zipFile = new ZipFile(fileName);
-				Enumeration<?> enu = zipFile.entries();
-				while (enu.hasMoreElements()) {
-					ZipEntry zipEntry = (ZipEntry) enu.nextElement();
-
-					String name = zipEntry.getName();
-					long size = zipEntry.getSize();
-					long compressedSize = zipEntry.getCompressedSize();
-					System.out.printf("name: %-20s | size: %6d | compressed size: %6d\n", 
-							name, size, compressedSize);
-
-					File file = new File(name);
-					if (name.endsWith("/")) {
-						file.mkdirs();
-						continue;
-					}
-
-					File parent = file.getParentFile();
-					if (parent != null) {
-						parent.mkdirs();
-					}
-
-					InputStream is = zipFile.getInputStream(zipEntry);
-					FileOutputStream fos = new FileOutputStream(file);
-					byte[] bytes = new byte[1024];
-					int length;
-					while ((length = is.read(bytes)) >= 0) {
-						fos.write(bytes, 0, length);
-					}
-					is.close();
-					fos.close();
-
-				}
-				zipFile.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-*/			
-			/* Code to see the content received from the server side.
-			FileOutputStream outStream = new FileOutputStream(new File(workDir));
-			
-			byte buffer[] = new byte[8192];
-			while(response.read(buffer) > 0){
-				outStream.write(buffer);
-			}
-			outStream.close();	
-			response.close();
-			*/
-			
-		} 
+		} // ~UNZIP CODE 
+		
 		catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
