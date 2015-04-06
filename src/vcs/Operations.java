@@ -1,5 +1,7 @@
 package vcs;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -115,7 +117,7 @@ public class Operations {
 				repoName = tokens[tokens.length - 2];
 				
 				//Create a File or fetch it (if already created) from user.home
-				String userHomeDir = System.getProperty("user.dir");
+				String userHomeDir = System.getProperty("user.home");
 				//VCSLogger.infoLogToCmd("User Home Directory: " + userHomeDir);
 
 				//repoListHolder contains a List to all the local repositories initiated.
@@ -756,16 +758,90 @@ public class Operations {
 				VCSLogger.infoLogToCmd("CONFIG WRITE FAILURE.");
 			}
 			*/
-			String userHomeDir = System.getProperty("user.home");
+			//String userHomeDir = System.getProperty("user.home");
 			
 			String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
 			String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
 
-			String fileName = userHomeDir + "/" + fileNameWithoutExtn + ".zip";
+			String userWorkDir = System.getProperty("user.dir");
+			String fileName = userWorkDir + "/" + fileNameWithoutExtn + ".zip";
 			
 			VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + fileName);
 			
+			
+			//Network Unzip file.
+			
+			String filename = fileName;
+			
+			File srcFile = new File(filename);
+			
+			// create a directory with the same name to which the contents will be extracted
+			String zipPath = filename.substring(0, filename.length()-4);
+			File temp = new File(zipPath);
+			temp.mkdir();
+			
+			ZipFile zipFile = null;
+			
 			try {
+				
+				zipFile = new ZipFile(srcFile);
+				
+				// get an enumeration of the ZIP file entries
+				Enumeration<?> e = zipFile.entries();
+				
+				while (e.hasMoreElements()) {
+					
+					ZipEntry entry = (ZipEntry) e.nextElement();
+					
+					File destinationPath = new File(zipPath, entry.getName());
+					 
+					//create parent directories
+					destinationPath.getParentFile().mkdirs();
+					
+					// if the entry is a file extract it
+					if (entry.isDirectory()) {
+						continue;
+					}
+					else {
+						
+						System.out.println("Extracting file: " + destinationPath);
+						
+						BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
+
+						int b;
+						byte buffer[] = new byte[1024];
+
+						FileOutputStream fos = new FileOutputStream(destinationPath);
+						
+						BufferedOutputStream bos = new BufferedOutputStream(fos, 1024);
+
+						while ((b = bis.read(buffer, 0, 1024)) != -1) {
+							bos.write(buffer, 0, b);
+						}
+						
+						bos.close();
+						bis.close();
+						
+					}
+					
+				}
+				
+			}
+			catch (IOException ioe) {
+				System.out.println("Error opening zip file" + ioe);
+			}
+			 finally {
+				 try {
+					 if (zipFile!=null) {
+						 zipFile.close();
+					 }
+				 }
+				 catch (IOException ioe) {
+						System.out.println("Error while closing zip file" + ioe);
+				 }
+			 }
+			
+			/*try {
 				ZipFile zipFile = new ZipFile(fileName);
 				Enumeration<?> enu = zipFile.entries();
 				while (enu.hasMoreElements()) {
@@ -803,7 +879,7 @@ public class Operations {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
+*/			
 			/* Code to see the content received from the server side.
 			FileOutputStream outStream = new FileOutputStream(new File(workDir));
 			
