@@ -1,0 +1,2 @@
+sample.vcs /home/shubham/VCSTemp/sample/.vcs/
+Garbage.vcs /home/shubham/VCSTemp/Garbage/vcsd1.vcs/
