@@ -1,5 +1,7 @@
 package vcs;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -121,7 +123,7 @@ public class Operations {
 				repoName = tokens[tokens.length - 2];
 				
 				//Create a File or fetch it (if already created) from user.home
-				String userHomeDir = System.getProperty("user.dir");
+				String userHomeDir = System.getProperty("user.home");
 				//VCSLogger.infoLogToCmd("User Home Directory: " + userHomeDir);
 
 				//repoListHolder contains a List to all the local repositories initiated.
@@ -927,20 +929,9 @@ public class Operations {
 			conn.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
 			conn.setRequestProperty("Accept","*/*");
 			
-			//Receives Response from server (Check SimpleWebServer.java and stores in response InputStream)
-			//InputStream response = conn.getInputStream();
-			
 			int status = ((HttpURLConnection) conn).getResponseCode();
 			
 			VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
-			
-			/*FileOutputStream fos = new FileOutputStream(file);
-			byte[] bytes = new byte[1024];
-			int length;
-			while ((length = response.read(bytes)) >= 0) {
-				fos.write(bytes, 0, length);
-			}
-			fos.close();*/
 			
 			/** 
 			 * NanoHttpd serve() is automatically called 
@@ -961,66 +952,87 @@ public class Operations {
 				VCSLogger.infoLogToCmd("CONFIG WRITE FAILURE.");
 			}
 			*/
-			String userHomeDir = System.getProperty("user.home");
+			
+			// ~UNZIP CODE
 			
 			String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
 			String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
 
-			String fileName = userHomeDir + "/" + fileNameWithoutExtn + ".zip";
+			String userWorkDir = System.getProperty("user.dir");
+			String filename = userWorkDir + "/" + fileNameWithoutExtn + ".zip";
 			
-			VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + fileName);
+			VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + filename);
+			
+			File srcFile = new File(filename);
+			
+			// create a directory with the same name to which the contents will be extracted
+			String zipPath = filename.substring(0, filename.length()-4);
+			File temp = new File(zipPath);
+			temp.mkdir();
+			
+			ZipFile zipFile = null;
 			
 			try {
-				ZipFile zipFile = new ZipFile(fileName);
-				Enumeration<?> enu = zipFile.entries();
-				while (enu.hasMoreElements()) {
-					ZipEntry zipEntry = (ZipEntry) enu.nextElement();
-
-					String name = zipEntry.getName();
-					long size = zipEntry.getSize();
-					long compressedSize = zipEntry.getCompressedSize();
-					System.out.printf("name: %-20s | size: %6d | compressed size: %6d\n", 
-							name, size, compressedSize);
-
-					File file = new File(name);
-					if (name.endsWith("/")) {
-						file.mkdirs();
+				
+				zipFile = new ZipFile(srcFile);
+				
+				// get an enumeration of the ZIP file entries
+				Enumeration<?> e = zipFile.entries();
+				
+				while (e.hasMoreElements()) {
+					
+					ZipEntry entry = (ZipEntry) e.nextElement();
+					
+					File destinationPath = new File(zipPath, entry.getName());
+					 
+					//create parent directories
+					destinationPath.getParentFile().mkdirs();
+					
+					// if the entry is a file extract it
+					if (entry.isDirectory()) {
 						continue;
 					}
+					else {
+						
+						System.out.println("Extracting file: " + destinationPath);
+						
+						BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
 
-					File parent = file.getParentFile();
-					if (parent != null) {
-						parent.mkdirs();
+						int b;
+						byte buffer[] = new byte[1024];
+
+						FileOutputStream fos = new FileOutputStream(destinationPath);
+						
+						BufferedOutputStream bos = new BufferedOutputStream(fos, 1024);
+
+						while ((b = bis.read(buffer, 0, 1024)) != -1) {
+							bos.write(buffer, 0, b);
+						}
+						
+						bos.close();
+						bis.close();
+						
 					}
-
-					InputStream is = zipFile.getInputStream(zipEntry);
-					FileOutputStream fos = new FileOutputStream(file);
-					byte[] bytes = new byte[1024];
-					int length;
-					while ((length = is.read(bytes)) >= 0) {
-						fos.write(bytes, 0, length);
-					}
-					is.close();
-					fos.close();
-
+					
 				}
-				zipFile.close();
-			} catch (IOException e) {
-				e.printStackTrace();
+				
 			}
-			
-			/* Code to see the content received from the server side.
-			FileOutputStream outStream = new FileOutputStream(new File(workDir));
-			
-			byte buffer[] = new byte[8192];
-			while(response.read(buffer) > 0){
-				outStream.write(buffer);
+			catch (IOException ioe) {
+				System.out.println("Error opening zip file" + ioe);
 			}
-			outStream.close();	
-			response.close();
-			*/
+			 finally {
+				 try {
+					 if (zipFile!=null) {
+						 zipFile.close();
+					 }
+				 }
+				 catch (IOException ioe) {
+						System.out.println("Error while closing zip file" + ioe);
+				 }
+			 }
 			
-		} 
+		} // ~UNZIP CODE 
+		
 		catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
