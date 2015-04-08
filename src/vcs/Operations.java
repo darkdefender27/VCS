@@ -3,7 +3,6 @@ package vcs;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -11,7 +10,6 @@ import java.io.FileWriter;
 //import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -113,8 +111,13 @@ public class Operations {
 			{
 				String repoName = null;
 				String sample = vcsPath.toString();
+				if(sample.contains("\\"))
+				{
+					sample=sample.replace("\\", "/");
+				}
 				String delims = "[/]";
 				String[] tokens = sample.split(delims);
+				System.out.println("tokens.length "+(tokens.length - 2) +"    "+sample);
 				repoName = tokens[tokens.length - 2];
 				
 				//Create a File or fetch it (if already created) from user.home
@@ -368,8 +371,18 @@ public class Operations {
 		iniCommit.setNoOfLinesInserted(noOflinesInserted);
 		iniCommit.setNoOfLinesDeleted(noOfLinesDeleted);
 		
+		boolean done=writeToDeveloperList(committer,workingDir);
 		
 		String branchName=getCurrentBranchName(workingDir);
+		try 
+		{
+			writeBranchHead(workingDir, iniCommit.getObjectHash(), branchName);
+		} 
+		catch (IOException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		iniCommit.setBranchName(branchName);
 		
 		
@@ -380,6 +393,78 @@ public class Operations {
 		System.out.println("commit hash	"+iniCommit.getObjectHash());
 		VCSLogger.infoLogToCmd(iniCommit.getTree().printTree(0));
 		return iniCommit.getObjectHash();
+	}
+
+	private boolean writeToDeveloperList(String committer, String workingDir) {
+		// TODO Auto-generated method stub
+		String devListFile= workingDir +"/" +Constants.VCSFOLDER +"/" +Constants.DEVELOPERS_FILE;
+		boolean done=false;
+		File f=new File(devListFile);
+		if(!f.exists())
+		{
+			try {
+				f.createNewFile();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		if(f.exists())
+		{
+			try 
+			{
+				BufferedReader br =new BufferedReader(new FileReader(f));
+				ArrayList<String> committerList =new ArrayList<String>();
+				String line=null;
+				while((line=br.readLine())!=null)
+				{
+					if(!committerList.contains(line))
+					{
+						committerList.add(line);
+					}
+				}
+				br.close();
+				if(!committerList.contains(committer))
+				{
+					committerList.add(committer);
+				}
+				BufferedWriter bw=new BufferedWriter(new FileWriter(f));
+				if(f.exists())
+				{
+					int i=0,max=committerList.size();
+					while(i<max)
+					{
+						if(i==0)
+						{
+							bw.write(committerList.get(i));
+							if(i!=max-1)
+							{
+								bw.newLine();
+							}
+						}
+						else
+						{
+							bw.append(committerList.get(i));
+							if(i!=max-1)
+							{
+								bw.newLine();
+							}
+						}
+						i++;
+					}
+				}
+				bw.close();
+			}
+			catch (FileNotFoundException e) 
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return done;
 	}
 
 	private void inorder(AbstractVCSTree currentTree,
@@ -446,7 +531,6 @@ public class Operations {
 			else
 			{
 				head=null;
-				throw new NullPointerException();
 			}
 		} 
 		catch (IOException e) 
@@ -532,7 +616,8 @@ public class Operations {
 		String sCurrentLine;
 		if(branch.exists()){
 			br = new BufferedReader(new FileReader(workingDir + ".vcs/branches/" + branchName));
-			while ((sCurrentLine = br.readLine()) != null) {
+			while ((sCurrentLine = br.readLine()) != null) 
+			{
 				parent = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_TREE);
 			}
 			br.close();
