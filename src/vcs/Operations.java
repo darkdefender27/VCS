@@ -36,6 +36,7 @@ import objects.VCSBlob;
 import objects.VCSCommit;
 import objects.VCSTree;
 import vcs.Constants;
+
 //import network.HashUtil;
 import java.lang.System;
 
@@ -446,7 +447,6 @@ public class Operations {
 			else
 			{
 				head=null;
-				throw new NullPointerException();
 			}
 		} 
 		catch (IOException e) 
@@ -554,13 +554,13 @@ public class Operations {
 		boolean retval = false;
 		String branchDirectory = workingDirectory + ".vcs/branches";
 		System.out.println("inside mergeBranch");
-		if(branchExists(workingDirectory, firstBranch) && branchExists(workingDirectory, secondBranch))
+		//if(branchExists(workingDirectory, firstBranch) && branchExists(workingDirectory, secondBranch))
 		{
 			VCSCommit firstCommitObject = getBranchHead(workingDirectory, firstBranch);
 			VCSCommit secondCommitObject = getBranchHead(workingDirectory, secondBranch);
 			VCSTree firstVCSTree =  firstCommitObject.getTree();
 			VCSTree secondVCSTree =  secondCommitObject.getTree();
-			VCSTree mergedVCSTree =  new VCSTree(firstVCSTree.getName(), firstVCSTree.getType(), workingDirectory);
+			VCSTree mergedVCSTree =  new VCSTree(firstVCSTree.getName(), firstVCSTree.getPath(), workingDirectory);
 			
 			if(firstVCSTree == null && secondVCSTree == null)
 			{
@@ -614,6 +614,10 @@ public class Operations {
 		{
 			diff = 0;
 		}
+		for(int i=0;i<diff;i++)
+		{
+			
+		}
 		return null;
 	}
 	private int getLength(VCSTree VCSTreeObj) {
@@ -639,7 +643,7 @@ public class Operations {
 				VCSTree mergedVCSTreeChild = new VCSTree(firstTmpObj.getName(),firstTmpObj.getPath(),firstTmpObj.getWorkingDirectory());
 				mergedVCSTree.addItem(mergedVCSTreeChild);
 				mergeTree((VCSTree)firstTmpObj,(VCSTree)secondTmpObj,mergedVCSTreeChild,commonAncestor);
-				firstVCSTreeChildren.remove(firstTmpObj);
+				firstVCSTreeIterator.remove();
 				secondVCSTreeChildren.remove(secondTmpObj);
 			}
 			//common files
@@ -654,30 +658,33 @@ public class Operations {
 				else
 				{
 					System.out.println("Rao's merge entered");
+					mergedVCSTree.addItem(firstTmpObj);///delete after test..no use
 					//call rao's function to merge both files
-					((VCSBlob)firstTmpObj).writeOriginalToTempDir(firstTmpObj.getWorkingDirectory() + ".vcs/tmp/branchOne/" + firstTmpObj.getName());
-					((VCSBlob)secondTmpObj).writeOriginalToTempDir(secondTmpObj.getWorkingDirectory() + ".vcs/tmp/branchTwo/" + secondTmpObj.getName());
-					//((VCSBlob)firstTmpObj).writeOriginalToTempDir(firstTmpObj.getWorkingDirectory() + firstTmpObj.getRelativePath());
-					
-					
-					String file1Contents = readFileIntoString(firstTmpObj.getWorkingDirectory() + ".vcs/tmp/branchOne/" + firstTmpObj.getName());
-					String file2Contents = readFileIntoString(secondTmpObj.getWorkingDirectory() + ".vcs/tmp/branchTwo/" + secondTmpObj.getName());
-					
-					//String completeFileName = searchFileInTree(commonAncestor,firstTmpObj.getName());
-					AbstractVCSTree completeFileNameObj = commonAncestor.findTreeIfExist(firstTmpObj.getName(), 0);
-					((VCSBlob)completeFileNameObj).writeOriginalToTempDir(firstTmpObj.getWorkingDirectory() + ".vcs/tmp/ancestor/" + firstTmpObj.getName());
-					String file3Contents = readFileIntoString(firstTmpObj.getWorkingDirectory() + ".vcs/tmp/ancestor/" + firstTmpObj.getName());
-					
-					Diff diff = new Diff();
-					MergeResult mr=diff.merge(file3Contents, file1Contents, file2Contents, null, false);
-					
-					//write this to blob
-					//File mergedFile = new File(firstTmpObj.getPath());
-					
-					VCSBlob mergedFile = new VCSBlob(firstTmpObj.getName(), firstTmpObj.getPath(), firstTmpObj.getWorkingDirectory());
-					//add the contents of "mr.getDefaultMergedResult()" to 'mergedFile'
-					mergedVCSTree.addItem(mergedFile);
-					//mr.getDefaultMergedResult();
+					/*
+								((VCSBlob)firstTmpObj).writeOriginalToTempDir(firstTmpObj.getWorkingDirectory() + ".vcs/tmp/branchOne/" + firstTmpObj.getName());
+								((VCSBlob)secondTmpObj).writeOriginalToTempDir(secondTmpObj.getWorkingDirectory() + ".vcs/tmp/branchTwo/" + secondTmpObj.getName());
+								//((VCSBlob)firstTmpObj).writeOriginalToTempDir(firstTmpObj.getWorkingDirectory() + firstTmpObj.getRelativePath());
+								
+								
+								String file1Contents = readFileIntoString(firstTmpObj.getWorkingDirectory() + ".vcs/tmp/branchOne/" + firstTmpObj.getName());
+								String file2Contents = readFileIntoString(secondTmpObj.getWorkingDirectory() + ".vcs/tmp/branchTwo/" + secondTmpObj.getName());
+								
+								//String completeFileName = searchFileInTree(commonAncestor,firstTmpObj.getName());
+								AbstractVCSTree completeFileNameObj = commonAncestor.findTreeIfExist(firstTmpObj.getName(), 0);
+								((VCSBlob)completeFileNameObj).writeOriginalToTempDir(firstTmpObj.getWorkingDirectory() + ".vcs/tmp/ancestor/" + firstTmpObj.getName());
+								String file3Contents = readFileIntoString(firstTmpObj.getWorkingDirectory() + ".vcs/tmp/ancestor/" + firstTmpObj.getName());
+								
+								Diff diff = new Diff();
+								MergeResult mr=diff.merge(file3Contents, file1Contents, file2Contents, null, false);
+								
+								//write this to blob
+								//File mergedFile = new File(firstTmpObj.getPath());
+								
+								VCSBlob mergedFile = new VCSBlob(firstTmpObj.getName(), firstTmpObj.getPath(), firstTmpObj.getWorkingDirectory());
+								//add the contents of "mr.getDefaultMergedResult()" to 'mergedFile'
+								mergedVCSTree.addItem(mergedFile);
+								//mr.getDefaultMergedResult();
+								 * */
 				}
 			}
 			//non commmon files and directories
@@ -698,21 +705,31 @@ public class Operations {
 	boolean branchExists(String workingDirectory,String branchName)
 	{
 		boolean retval = false;
+		System.out.println("workdir and branch name		"+workingDirectory+"   "+branchName);
 		String branchDir = workingDirectory + ".vcs/branches";
 		File f = new File(branchDir);
-	    String[] files  = f.list();
-	    int filesArraySize = files.length;
+	    ArrayList<String> files = null;
+		listAllFiles(workingDirectory, files, workingDirectory);
+	    int filesArraySize = files.size();
 	    System.out.println("files size : "+filesArraySize);
-	    System.out.println(files[0]);
-	    System.out.println(files[1]);
+	    //System.out.println(files[0]);
+	    //System.out.println(files[1]);
 	    int flag = 1;
+	    Iterator<String> iterator = files.iterator();
+		while (iterator.hasNext()) {
+			if(branchName.equals(iterator.next()))
+			{
+				retval = true;
+			}
+		}
+	    /*
 	    for(int i=0;i<filesArraySize && !retval;i++)
 	    {
 	    	if(branchName.equals(files[i]))
 	    	{
 	    		retval = true;
 	    	}
-	    }
+	    }*/
 		return retval;
 	}
 

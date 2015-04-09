@@ -47,11 +47,13 @@ public class VCS {
 
 	public static void main(String[] args)
 	{
+		
 		//String cmdArgs = "init C:/Users/Ambarish/Desktop/vcsdebug/";
 		String cmdArgs = "add C:/Users/Ambarish/Desktop/vcsdebug/ *";
 		//String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ ambarish.v.rao@gmail.com B2_initial";
 		//String cmdArgs = "create C:/Users/Ambarish/Desktop/vcsdebug/ branch b2 ad3b7a96a337c214bd68375c130baa6f76527a17e8cfd3f69aaf1ffbd4fffd";
 		//String cmdArgs ="switch C:/Users/Ambarish/Desktop/vcsdebug/ branch b1";
+
 		args = cmdArgs.split(" ");
 		args[1] = replaceHashWithSpace(args[1]);
 		//args = cmdArgs.split(" ");
@@ -247,12 +249,12 @@ public class VCS {
 					System.out.println("Branch switched successfully");
 				}
 			}
-			if(args[0].equals("merge") && args[1].equals("branch") && argLength == 4)
+			if(args[0].equals("merge") && args[1].equals("branch") && argLength == 5)
 			{
-				String firstBranchName = args[2];
-				String secondBranchName = args[3];
+				String firstBranchName = args[3];
+				String secondBranchName = args[4];
 				try {
-					String workDir = args[1];
+					String workDir = replaceHashWithSpace(args[2]);
 					flag = ops.mergeBranch(workDir, firstBranchName,secondBranchName);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
