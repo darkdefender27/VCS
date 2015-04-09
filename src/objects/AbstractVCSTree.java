@@ -46,7 +46,9 @@ public abstract class AbstractVCSTree extends VCSObject
 		super(workingDirectory);
 		this.name = name;
 		this.diskPath = diskPath;
+		System.out.println("abstractvcstree		"+diskPath+"   "+workingDirectory);
 		this.relativePath = this.diskPath.substring(this.workingDirectory.length()-1, this.diskPath.length());
+		System.out.println("relative path   :"+relativePath);
 	}
 	
 	/**
