@@ -32,7 +32,7 @@ public class VCSTree extends AbstractVCSTree{
 		this.type = "tree";
 		generatingFromHash = true;
 		createInMemory();
-		VCSLogger.debugLogToCmd("VCSTree#", diskPath +" tree restored");
+		//VCSLogger.debugLogToCmd("VCSTree#", diskPath +" tree restored");
 	}
 	
 	private boolean generatingFromHash;

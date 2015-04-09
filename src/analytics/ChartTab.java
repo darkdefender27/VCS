@@ -8,11 +8,17 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 
 import javax.swing.JPanel;
 
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
 import org.jfree.data.time.Week;
 
 import objects.VCSCommit;
@@ -44,35 +50,121 @@ public class ChartTab {
 		panel.setLayout(layout);
 		panel.setBackground(Color.BLACK);
 		Operations obj=new Operations();
+		JFreeChart jfChart=null;
 		if(xAxisParameter.equals("no of commits") && yAxisParameter.equals("week"))
 		{
-			if((whereClauseParameter.equals("branch") && whereClauseValue.equals("all")) || (whereClauseParameter.equals("developer") && whereClauseValue.equals("all")))
+			
+			//Bar chart
+			ArrayList<String> branches=new ArrayList<String>();
+			branches=getBranches();
+			int i=0,max=branches.size();
+			HashMap<Week, Integer> hm=new HashMap<Week, Integer>();
+			Queue<VCSCommit> que=new LinkedList<VCSCommit>();
+			VCSCommit head=null;
+			boolean branchSelected=false,devSelected=false;
+			if(whereClauseParameter.equals("branch") && !(whereClauseValue.equals("all")))
 			{
-				//timeseries chart
-				ArrayList<String> branches=new ArrayList<String>();
-				branches=getBranches();
-				int i=0,max=branches.size();
-				while(i<max)
+				try 
 				{
-					try 
-					{
-						VCSCommit head=obj.getBranchHead(workingDir, branches.get(i));
-						Queue<VCSCommit> que=new LinkedList<VCSCommit>();
-						ArrayList<Week> weeks=new ArrayList<Week>();
-						Week w=new Week();
-					}
-					catch (IOException e) 
-					{
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					i++;
+					head=obj.getCommitTreeFromHead(workingDir, whereClauseValue);
+					branchSelected=true;
+					max=1;
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					head=null;
 				}
 			}
-			else
+			else if(whereClauseParameter.equals("developer") && !(whereClauseValue.equals("all")))
 			{
-				
+				devSelected=true;
 			}
+			while(i<max)
+			{
+				try 
+				{
+					if(branchSelected==false)
+					{
+						head=obj.getCommitTreeFromHead(workingDir, branches.get(i));
+					}
+					System.out.println(branches.get(i)+" "+head.getObjectHash());
+					que.add(head);
+					while(!que.isEmpty())
+					{
+						head=que.remove();
+						if(devSelected==false)
+						{
+							Date d=new Date(head.getCommitTimestamp());
+							Week w=new Week(d);
+							Integer temp=hm.get(w);
+							if(temp==null)
+							{
+								temp=0;
+							}
+							hm.put(w, temp+1);
+						}
+						else
+						{
+							if(head.getCommitter().equals(whereClauseValue))
+							{
+								Date d=new Date(head.getCommitTimestamp());
+								Week w=new Week(d);
+								Integer temp=hm.get(w);
+								if(temp==null)
+								{
+									temp=0;
+								}
+								hm.put(w, temp+1);
+							}
+						}
+						ArrayList<VCSCommit> parents=head.getParentCommits();
+						int j=0,size=parents.size();
+						System.out.println("j= "+j+" size= "+size);
+						while(j<size)
+						{
+							if(branchSelected==false)
+							{
+								if(parents.get(j).getBranchName().equals(branches.get(i)))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							else
+							{
+								if(parents.get(j).getBranchName().equals(whereClauseValue))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							j++;
+						}
+					}
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				i++;
+			}
+			BarChart chart=new BarChart(xAxisParameter +" vs " +yAxisParameter,yAxisParameter, xAxisParameter );
+			System.out.println("keyset length " +hm.get(hm.keySet().toArray(new Week[5])[0]));
+			Set<Week> set=hm.keySet();
+			Iterator<Week> it=set.iterator();
+			Week week;
+			while(it.hasNext())
+			{
+				week=it.next();
+				System.out.println("iterator" +week.getWeek()+" "+week.getYear());
+				chart.addColName(week.getWeek()+" "+week.getYear());
+			}
+			chart.addToDataSet( hm.values().toArray(), "temp");
+			jfChart=chart.createChart();
+			
 		}
 		else if(xAxisParameter.equals("no of commits") && yAxisParameter.equals("developer"))
 		{
@@ -103,7 +195,11 @@ public class ChartTab {
 			
 		}
 		//get chart n set
-		//panel.add(chart);
+		if(jfChart!=null)
+		{
+			ChartPanel cp=new ChartPanel(jfChart);
+			panel.add(cp);
+		}
 		
 		return panel;
 	}

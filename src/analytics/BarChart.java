@@ -67,6 +67,24 @@ public class BarChart
     	//dataset.addValue(2.0, "Row 2", "Column 3");
     }
 	
+	public void addToDataSet(Object[] values,String rowIdentifier)
+    {
+		if(dataset==null)
+		{
+			this.dataset=new DefaultCategoryDataset();
+		}
+		if(this.dataset!=null)
+		{
+			int i=0;
+			while(i<this.noOfCols)
+			{
+				this.dataset.addValue((Number) values[i], rowIdentifier, colNames.get(i));
+				i++;
+			}
+			this.noOfRows++;
+		}
+    }
+	
 	public void removeFromDataSet(int rowNum)
 	{
 		if(this.dataset!=null)
