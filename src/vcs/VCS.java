@@ -94,9 +94,9 @@ public class VCS {
 		
 		//String cmdArgs = "init C:/Users/Ambarish/Desktop/vcsdebug/";
 		//String cmdArgs = "add C:/Users/Ambarish/Desktop/vcsdebug/ *";
-		//String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ b1_1";
-		//String cmdArgs = "create C:/Users/Ambarish/Desktop/vcsdebug/ branch b1 4cf5d3ec87eba77a67f7a985326ecb3e893ef8acbc3f91cd0bc298e859b8d";
-		String cmdArgs ="switch C:/Users/Ambarish/Desktop/vcsdebug/ branch b1";
+		String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ master_4";
+		//String cmdArgs = "create C:/Users/Ambarish/Desktop/vcsdebug/ branch b1 a46a7d06dbbcdef2d9ab10365e634edc9a629a7c593df712017ca31c31e33";
+		//String cmdArgs ="switch C:/Users/Ambarish/Desktop/vcsdebug/ branch master";
 		args = cmdArgs.split(" ");
 		userName=getUserName();
 		args[1] = replaceHashWithSpace(args[1]);

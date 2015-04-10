@@ -1,6 +1,5 @@
 package analytics;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
@@ -161,7 +160,7 @@ public class AnalyticsEntryPoint{
 				if(e.getSource().equals(okButton))
 				{
 					System.out.println(selectLabel.getText() +" " +xAxisComboBox.getSelectedItem().toString() +" " +versusLabel.getText() +" " +yAxisComboBox.getSelectedItem().toString() +" "+whereLabel.getText() +" "+extraParametersComboBox.getSelectedItem().toString() +" = "+extraValuesComboBox.getSelectedItem().toString());
-					String query=selectLabel.getText() +" " +xAxisComboBox.getSelectedItem().toString() +" " +versusLabel.getText() +" " +yAxisComboBox.getSelectedItem().toString();
+					//String query=selectLabel.getText() +" " +xAxisComboBox.getSelectedItem().toString() +" " +versusLabel.getText() +" " +yAxisComboBox.getSelectedItem().toString();
 					if(!xAxisComboBox.getSelectedItem().toString().equals(yAxisComboBox.getSelectedItem().toString()))
 					{
 						ChartTab obj= new ChartTab(xAxisComboBox.getSelectedItem().toString(),yAxisComboBox.getSelectedItem().toString(),extraParametersComboBox.getSelectedItem().toString(),extraValuesComboBox.getSelectedItem().toString(),workingDir);
@@ -171,6 +170,9 @@ public class AnalyticsEntryPoint{
 				}
 			}
 		});
+	      
+	      	      
+	      
 	      
 	      mainFrame.add(tabbedPane);
 	      mainFrame.setVisible(true);
