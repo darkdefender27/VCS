@@ -126,7 +126,7 @@ public class VCSCommit extends VCSObject
 		this.objectHash = objectHash;
 		this.importFlag = importFlag;
 		createInMemory();
-		VCSLogger.debugLogToCmd("VCSCommit#", objectHash + " commit restored");
+		//VCSLogger.debugLogToCmd("VCSCommit#", objectHash + " commit restored");
 	}
 
 	/**

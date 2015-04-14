@@ -13,7 +13,7 @@ public class NetworkOps {
 	
     public File CloneRepository(String repoName) {
     	
-    	String userHomeDir = System.getProperty("user.dir");
+    	String userHomeDir = System.getProperty("user.home");
     	
     	String party[] = repoName.split("\\.");
     	String OUTPUT_ZIP_FILE = userHomeDir + "/" + party[0];
@@ -32,7 +32,7 @@ public class NetworkOps {
         	    }
         	}
         	
-        	if(SOURCE_FOLDER.equals("")) {
+        	if(SOURCE_FOLDER.equals(null)) {
         		VCSLogger.infoLogToCmd("Repository " + repoName + " does not exist.");
         	}
 		} 
@@ -41,7 +41,7 @@ public class NetworkOps {
 		}
     	
     	//String SOURCE_FOLDER = "/home/shubham/VCSTemp/VCSDebug/VCSD_1_2/.vcs";
-    	VCSLogger.infoLogToCmd("SOURCE Folder: " + SOURCE_FOLDER);
+    	VCSLogger.infoLogToCmd("SOURCE Folder Absolute Path: " + SOURCE_FOLDER);
     	
     	File f = new File(OUTPUT_ZIP_FILE);
     	
@@ -52,7 +52,7 @@ public class NetworkOps {
     		List<File> fileList = new ArrayList<File>();
 
     		ZipDirectory.getAllFiles(directoryToZip, fileList);
-    		ZipDirectory.writeZipFile(directoryToZip, fileList);
+    		ZipDirectory.writeZipFile(directoryToZip, fileList); //Writes to the working directory
     		VCSLogger.infoLogToCmd("---Done");     	
     	}
     	else {

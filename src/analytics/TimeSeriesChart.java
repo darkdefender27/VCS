@@ -45,6 +45,29 @@ public class TimeSeriesChart
 		}
     }
 	
+	public void addToDataSet(Object[] periods,Object[] values,String rowIdentifier,boolean movingAvgReqd,int periodLength)
+    {
+		if(dataset==null || series==null)
+		{
+			this.dataset=new TimeSeriesCollection();
+			series=new TimeSeries("");
+		}
+		int i=0;
+		series=new TimeSeries(rowIdentifier);
+		while(i<periods.length)
+		{
+			series.add((RegularTimePeriod) periods[i], (double) ((Integer)values[i]).intValue());
+			System.out.println(periods[i].toString() +" , "+(double) ((Integer)values[i]).intValue());
+			i++;
+		}
+		dataset.addSeries(series);
+		if(movingAvgReqd)
+		{
+			TimeSeries mav = MovingAverage.createMovingAverage(series, "moving avg "+rowIdentifier, periodLength, 0);
+			this.dataset.addSeries(mav);
+		}
+    }
+	
 	public JFreeChart createChart() 
 	{   
         JFreeChart chart = ChartFactory.createTimeSeriesChart(this.chartTitle, this.axisLabel, this.valueLabel, this.dataset);

@@ -1,5 +1,6 @@
 sample.vcs /home/shubham/VCSTemp/sample/.vcs/
 Garbage.vcs /home/shubham/VCSTemp/Garbage/vcsd1.vcs/
-VCSDebug.vcs /home/rounak/final year project/VCS v1.5.0/VCSDebug/
-VCSDebug.vcs /home/rounak/final year project/VCS v1.5.0/VCSDebug/
-VCSDebug.vcs /home/rounak/final year project/VCS v1.5.0/VCSDebug/
+vcsdebug.vcs C:/Users/Ambarish/Desktop/vcsdebug/
+vcsdebug.vcs C:/Users/Ambarish/Desktop/vcsdebug/
+vcsdebug.vcs C:/Users/Ambarish/Desktop/vcsdebug/
+

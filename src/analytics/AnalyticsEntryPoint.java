@@ -1,5 +1,6 @@
 package analytics;
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
@@ -9,14 +10,18 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.beans.PropertyChangeListener;
-
-import javax.swing.Action;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.ArrayList;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
+
+import vcs.Constants;
 
 public class AnalyticsEntryPoint{
 
@@ -30,6 +35,7 @@ public class AnalyticsEntryPoint{
 	
 	private JLabel whereLabel;
 	private JLabel equalsLabel;
+	private JTabbedPane tabbedPane;
 	
 	private JComboBox<String> xAxisComboBox;
 	private JComboBox<String> yAxisComboBox;
@@ -37,17 +43,19 @@ public class AnalyticsEntryPoint{
 	private JComboBox<String> extraValuesComboBox;
 	
 	private JButton okButton;
+
+	private String workingDir;
 	
-	public AnalyticsEntryPoint()
+	public AnalyticsEntryPoint(String workingDir)
 	{
+		this.workingDir=workingDir;
 		prepareGUI();
-		
 	}
 	
 	private void prepareGUI(){
 	      mainFrame = new JFrame("VCS Analytics");
-	      mainFrame.setSize(400,400);
-	      mainFrame.setLayout(new GridLayout(3, 1));
+	      mainFrame.setSize(600,400);
+	      mainFrame.setLayout(new GridLayout(1, 1));
 
 	      selectLabel = new JLabel("select",JLabel.CENTER );
 	      versusLabel = new JLabel("vs",JLabel.CENTER);        
@@ -58,9 +66,10 @@ public class AnalyticsEntryPoint{
 	         }        
 	      });
 	      
+	      tabbedPane =new JTabbedPane();
+	      
 	      xAxisComboBox= new JComboBox<String>();
 	      xAxisComboBox.addItem("no of commits");
-	      xAxisComboBox.addItem("avg no of commits");
 	      xAxisComboBox.addItem("no of lines added & deleted");
 	      xAxisComboBox.addItem("no of developers");
 	      xAxisComboBox.setSize(new Dimension(100,50));
@@ -83,16 +92,19 @@ public class AnalyticsEntryPoint{
 	      whereLabel=new JLabel("where");
 	      equalsLabel=new JLabel("=");
 	      
-	      controlPanel.add(xAxisComboBox);
-	      controlPanel.add(versusLabel);
-	      controlPanel.add(yAxisComboBox);
-	      controlPanel.add(extraParametersComboBox);
+	      
 	      
 	      extraValuesComboBox=new JComboBox<String>();
+	      extraValuesComboBox.removeAllItems();
 	      extraValuesComboBox.addItem("all");
-    	  extraValuesComboBox.addItem("master");
-    	  extraValuesComboBox.addItem("b1");
-    	  extraValuesComboBox.addItem("temp");
+	      ArrayList<String> branches =new ArrayList<String>();
+		  branches =getBranches();
+		  int i=0,max=branches.size();
+		  while(i<max)
+		  {
+			  extraValuesComboBox.addItem(branches.get(i));
+			  i++;
+		  }
     	  
 	      extraParametersComboBox.addItemListener(new ItemListener() 
 	      {
@@ -103,30 +115,44 @@ public class AnalyticsEntryPoint{
 			      {
 					  extraValuesComboBox.removeAllItems();
 					  extraValuesComboBox.addItem("all");
-			    	  extraValuesComboBox.addItem("master");
-			    	  extraValuesComboBox.addItem("b1");
-			    	  extraValuesComboBox.addItem("temp");
+					  ArrayList<String> branches =new ArrayList<String>();
+					  branches =getBranches();
+					  int i=0,max=branches.size();
+					  while(i<max)
+					  {
+						  extraValuesComboBox.addItem(branches.get(i));
+						  i++;
+					  }
 			      }
 			      else if(extraParametersComboBox.getSelectedItem().equals("developer"))
 			      {
 			    	  extraValuesComboBox.removeAllItems();
+			    	  ArrayList<String> developers=new ArrayList<String>();
+			    	  developers=getDevelopers();
+			    	  int i=0,max=developers.size();
 			    	  extraValuesComboBox.addItem("all");
-			    	  extraValuesComboBox.addItem("ambarish.v.rao@gmail.com");
-			    	  extraValuesComboBox.addItem("rounak.nandanwar@gmail.com");
-			    	  extraValuesComboBox.addItem("shubham.utwal@gmail.com");
-			    	  extraValuesComboBox.addItem("prashant.aher@gmail.com");
+			    	  while(i<max)
+			    	  {
+			    		  extraValuesComboBox.addItem(developers.get(i));
+			    		  i++;
+			    	  }
 			      }
 			}
 		});
 	      okButton=new JButton("OK");
 	      
-	      mainFrame.add(selectLabel);
-	      mainFrame.add(controlPanel);
-	      mainFrame.add(whereLabel);
-	      mainFrame.add(extraParametersComboBox);
-	      mainFrame.add(equalsLabel);
-	      mainFrame.add(extraValuesComboBox);
-	      mainFrame.add(okButton);
+	      controlPanel.add(selectLabel);
+	      controlPanel.add(xAxisComboBox);
+	      controlPanel.add(versusLabel);
+	      controlPanel.add(yAxisComboBox);
+	      controlPanel.add(whereLabel);
+	      controlPanel.add(extraParametersComboBox);
+	      controlPanel.add(equalsLabel);
+	      controlPanel.add(extraValuesComboBox);
+	      controlPanel.add(okButton);
+	      tabbedPane.addTab("start", controlPanel);
+	      
+	      
 	      okButton.addActionListener(new ActionListener() {
 			
 			@Override
@@ -136,14 +162,74 @@ public class AnalyticsEntryPoint{
 				{
 					System.out.println(selectLabel.getText() +" " +xAxisComboBox.getSelectedItem().toString() +" " +versusLabel.getText() +" " +yAxisComboBox.getSelectedItem().toString() +" "+whereLabel.getText() +" "+extraParametersComboBox.getSelectedItem().toString() +" = "+extraValuesComboBox.getSelectedItem().toString());
 					String query=selectLabel.getText() +" " +xAxisComboBox.getSelectedItem().toString() +" " +versusLabel.getText() +" " +yAxisComboBox.getSelectedItem().toString();
-					if(query.equals("select no of commits vs week"))
+					if(!xAxisComboBox.getSelectedItem().toString().equals(yAxisComboBox.getSelectedItem().toString()))
 					{
-						
+						ChartTab obj= new ChartTab(xAxisComboBox.getSelectedItem().toString(),yAxisComboBox.getSelectedItem().toString(),extraParametersComboBox.getSelectedItem().toString(),extraValuesComboBox.getSelectedItem().toString(),workingDir);
+						JPanel tab=obj.getChartPanel();
+						tabbedPane.addTab("chartTab", tab);
 					}
 				}
 			}
 		});
+	      
+	      mainFrame.add(tabbedPane);
 	      mainFrame.setVisible(true);
 	   }
+	
+	protected ArrayList<String> getBranches() {
+		// TODO Auto-generated method stub
+		String branchFolder= workingDir +"/" +Constants.VCSFOLDER +"/" +Constants.BRANCH_FOLDER;
+		File f=new File(branchFolder);
+		ArrayList<String> branchesList =new ArrayList<String>();
+		if(f.exists() && f.isDirectory())
+		{
+			try 
+			{
+				File[] branches=f.listFiles();
+				int i=0,max=branches.length;
+				while(i<max)
+				{
+					if(!branchesList.contains(branches[i].getName()))
+					{
+						branchesList.add(branches[i].getName());
+					}
+					i++;
+				}
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+		return branchesList;
+	}
+
+	private ArrayList<String> getDevelopers()
+	{
+		String devListFile= workingDir +"/" +Constants.VCSFOLDER +"/" +Constants.DEVELOPERS_FILE;
+		File f=new File(devListFile);
+		ArrayList<String> committerList =new ArrayList<String>();
+		if(f.exists())
+		{
+			try 
+			{
+				BufferedReader br =new BufferedReader(new FileReader(f));
+				String line=null;
+				while((line=br.readLine())!=null)
+				{
+					if(!committerList.contains(line))
+					{
+						committerList.add(line);
+					}
+				}
+				br.close();
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+		return committerList;
+	}
 
 }

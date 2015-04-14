@@ -32,7 +32,7 @@ public class VCSBlob extends AbstractVCSTree{
 	public VCSBlob(String objectHash,String workingDirectory,String diskPath,String name){
 		super(objectHash,workingDirectory,diskPath,name);
 		this.type = "blob";
-		VCSLogger.debugLogToCmd("VCSBlob#", diskPath + " blob restored");
+		//VCSLogger.debugLogToCmd("VCSBlob#", diskPath + " blob restored");
 	}
 	
 	/**

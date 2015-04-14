@@ -1,9 +1,10 @@
 package vcs;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -11,7 +12,6 @@ import java.io.FileWriter;
 //import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.zip.ZipEntry;
@@ -114,12 +115,17 @@ public class Operations {
 			{
 				String repoName = null;
 				String sample = vcsPath.toString();
+				if(sample.contains("\\"))
+				{
+					sample=sample.replace("\\", "/");
+				}
 				String delims = "[/]";
 				String[] tokens = sample.split(delims);
+				System.out.println("tokens.length "+(tokens.length - 2) +"    "+sample);
 				repoName = tokens[tokens.length - 2];
 				
 				//Create a File or fetch it (if already created) from user.home
-				String userHomeDir = System.getProperty("user.dir");
+				String userHomeDir = System.getProperty("user.home");
 				//VCSLogger.infoLogToCmd("User Home Directory: " + userHomeDir);
 
 				//repoListHolder contains a List to all the local repositories initiated.
@@ -267,7 +273,7 @@ public class Operations {
 		VCSTree currentTree = workDir;
 		VCSTree eleAtPath = null;
 		VCSBlob lastEleAtPath = null;
-		int noOflinesInserted=0,noOfLinesDeleted=0;
+		int[] insertedDeleted=null;
 		for(int i=0;i<stagedFiles.length;i++)
 		{
 			currentTree = workDir;
@@ -312,49 +318,8 @@ public class Operations {
 						}
 					}
 				}
-			if(parentCommit!=null && parentCommit.getTree()!=null)
-			{
-				AbstractVCSTree obj=parentCommit.getTree().findTreeIfExist(stagedFiles[i], 0);
-				VCSBlob b=(VCSBlob)obj;
-				String fullFileName=null;
-				if(b!=null)
-				{
-					//System.out.println(overallPath+"  parent commit's filename "+b.getObjectHash());
-					fullFileName=b.writeTempFile(workingDir+"/"+Constants.VCSFOLDER+"/"+Constants.TEMP_FOLDER +"/",workingDir);
-				}
-				//do diff here
-				if(fullFileName!=null)
-				{
-					//System.out.println(workingDir+"/"+stagedFiles[i]+" "+fullFileName);
-					Diff diffObj=new Diff();
-					FileDiffResult result=diffObj.diff(readFileIntoString(fullFileName),readFileIntoString(workingDir+"/"+stagedFiles[i]), null, false);
-					noOfLinesDeleted+=result.getLineResult().getNoOfLinesDeleted();
-					noOflinesInserted+=result.getLineResult().getNoOfLinesAdded();
-					result=null;
-					File f=new File(fullFileName);
-					f.delete();
-				}
-				else
-				{
-					Diff diffObj=new Diff();
-					FileDiffResult result=diffObj.diff("",readFileIntoString(workingDir+stagedFiles[i]), null, false);
-					result.getLineResult().setNoOfLinesDeleted(result.getLineResult().getNoOfLinesDeleted()-1);
-					noOfLinesDeleted+=result.getLineResult().getNoOfLinesDeleted();
-					noOflinesInserted+=result.getLineResult().getNoOfLinesAdded();
-					result=null;
-				}
-			}
-			else if(parentCommit==null)
-			{
-				Diff diffObj=new Diff();
-				
-				FileDiffResult result=diffObj.diff("",readFileIntoString(workingDir+stagedFiles[i]), null, false);
-				result.getLineResult().setNoOfLinesDeleted(result.getLineResult().getNoOfLinesDeleted()-1);
-				//System.out.println("stagedfiles[i] "+stagedFiles[i] +" deleted "+result.getLineResult().getNoOfLinesDeleted());
-				noOfLinesDeleted+=result.getLineResult().getNoOfLinesDeleted();
-				noOflinesInserted+=result.getLineResult().getNoOfLinesAdded();
-				result=null;
-			}
+			
+			insertedDeleted=doDiffWork(parentCommit, stagedFiles[i], workingDir);
 		}
 		if(parentCommit!=null)
 		{
@@ -366,21 +331,153 @@ public class Operations {
 		
 		VCSLogger.debugLogToCmd("Operations#commit#newTree\n",workDir.printTree(0));
 		VCSCommit iniCommit = new VCSCommit(workingDir, parentCommit, workDir, message, author, committer);
-		iniCommit.setNoOfLinesInserted(noOflinesInserted);
-		iniCommit.setNoOfLinesDeleted(noOfLinesDeleted);
+		iniCommit.setNoOfLinesInserted(insertedDeleted[0]);
+		iniCommit.setNoOfLinesDeleted(insertedDeleted[1]);
 		
+		boolean done=writeToDeveloperList(committer,workingDir);
 		
 		String branchName=getCurrentBranchName(workingDir);
+		try 
+		{
+			writeBranchHead(workingDir, iniCommit.getObjectHash(), branchName);
+		} 
+		catch (IOException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		iniCommit.setBranchName(branchName);
 		
 		
 		System.out.println("branchName= "+iniCommit.getBranchName());
-		System.out.println("lines added " +noOflinesInserted+" lines deleted "+noOfLinesDeleted);
+		System.out.println("lines added " +insertedDeleted[0]+" lines deleted "+insertedDeleted[1]);
 		iniCommit.setCommitTimestamp(System.currentTimeMillis());
 		iniCommit.writeCommitToDisk();
 		System.out.println("commit hash	"+iniCommit.getObjectHash());
 		VCSLogger.infoLogToCmd(iniCommit.getTree().printTree(0));
 		return iniCommit.getObjectHash();
+	}
+	
+	
+	public int[] doDiffWork(VCSCommit parentCommit, String fileName, String workingDir)
+	{
+		int[] insertedDeleted=new int[2];
+		if(parentCommit!=null && parentCommit.getTree()!=null)
+		{
+			AbstractVCSTree obj=parentCommit.getTree().findTreeIfExist(fileName, 0);
+			VCSBlob b=(VCSBlob)obj;
+			String fullFileName=null;
+			if(b!=null)
+			{
+				//System.out.println(overallPath+"  parent commit's filename "+b.getObjectHash());
+				fullFileName=b.writeTempFile(workingDir+"/"+Constants.VCSFOLDER+"/"+Constants.TEMP_FOLDER +"/",workingDir);
+			}
+			//do diff here
+			if(fullFileName!=null)
+			{
+				//System.out.println(workingDir+"/"+stagedFiles[i]+" "+fullFileName);
+				Diff diffObj=new Diff();
+				FileDiffResult result=diffObj.diff(readFileIntoString(fullFileName),readFileIntoString(workingDir+"/"+fileName), null, false);
+				insertedDeleted[1]+=result.getLineResult().getNoOfLinesDeleted();
+				insertedDeleted[0]+=result.getLineResult().getNoOfLinesAdded();
+				result=null;
+				File f=new File(fullFileName);
+				f.delete();
+			}
+			else
+			{
+				Diff diffObj=new Diff();
+				FileDiffResult result=diffObj.diff("",readFileIntoString(workingDir+fileName), null, false);
+				result.getLineResult().setNoOfLinesDeleted(result.getLineResult().getNoOfLinesDeleted()-1);
+				insertedDeleted[1]+=result.getLineResult().getNoOfLinesDeleted();
+				insertedDeleted[0]+=result.getLineResult().getNoOfLinesAdded();
+				result=null;
+			}
+		}
+		else if(parentCommit==null)
+		{
+			Diff diffObj=new Diff();
+			
+			FileDiffResult result=diffObj.diff("",readFileIntoString(workingDir+fileName), null, false);
+			result.getLineResult().setNoOfLinesDeleted(result.getLineResult().getNoOfLinesDeleted()-1);
+			//System.out.println("stagedfiles[i] "+stagedFiles[i] +" deleted "+result.getLineResult().getNoOfLinesDeleted());
+			insertedDeleted[1]+=result.getLineResult().getNoOfLinesDeleted();
+			insertedDeleted[0]+=result.getLineResult().getNoOfLinesAdded();
+			result=null;
+		}
+		return insertedDeleted;
+	}
+
+	private boolean writeToDeveloperList(String committer, String workingDir) {
+		// TODO Auto-generated method stub
+		String devListFile= workingDir +"/" +Constants.VCSFOLDER +"/" +Constants.DEVELOPERS_FILE;
+		boolean done=false;
+		File f=new File(devListFile);
+		if(!f.exists())
+		{
+			try {
+				f.createNewFile();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		if(f.exists())
+		{
+			try 
+			{
+				BufferedReader br =new BufferedReader(new FileReader(f));
+				ArrayList<String> committerList =new ArrayList<String>();
+				String line=null;
+				while((line=br.readLine())!=null)
+				{
+					if(!committerList.contains(line))
+					{
+						committerList.add(line);
+					}
+				}
+				br.close();
+				if(!committerList.contains(committer))
+				{
+					committerList.add(committer);
+				}
+				BufferedWriter bw=new BufferedWriter(new FileWriter(f));
+				if(f.exists())
+				{
+					int i=0,max=committerList.size();
+					while(i<max)
+					{
+						if(i==0)
+						{
+							bw.write(committerList.get(i));
+							if(i!=max-1)
+							{
+								bw.newLine();
+							}
+						}
+						else
+						{
+							bw.append(committerList.get(i));
+							if(i!=max-1)
+							{
+								bw.newLine();
+							}
+						}
+						i++;
+					}
+				}
+				bw.close();
+			}
+			catch (FileNotFoundException e) 
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return done;
 	}
 
 	private void inorder(AbstractVCSTree currentTree,
@@ -532,8 +629,25 @@ public class Operations {
 		String sCurrentLine;
 		if(branch.exists()){
 			br = new BufferedReader(new FileReader(workingDir + ".vcs/branches/" + branchName));
-			while ((sCurrentLine = br.readLine()) != null) {
+			while ((sCurrentLine = br.readLine()) != null) 
+			{
 				parent = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_TREE);
+			}
+			br.close();
+		}
+		return parent;
+	}
+	
+	public VCSCommit getCommitTreeFromHead(String workingDir,String branchName) throws IOException{
+		BufferedReader br = null;
+		File branch = new File(workingDir + ".vcs/branches/" + branchName);
+		VCSCommit parent = null;
+		String sCurrentLine;
+		if(branch.exists()){
+			br = new BufferedReader(new FileReader(workingDir + ".vcs/branches/" + branchName));
+			while ((sCurrentLine = br.readLine()) != null) 
+			{
+				parent = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_COMMITS);
 			}
 			br.close();
 		}
@@ -859,20 +973,9 @@ public class Operations {
 			conn.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
 			conn.setRequestProperty("Accept","*/*");
 			
-			//Receives Response from server (Check SimpleWebServer.java and stores in response InputStream)
-			//InputStream response = conn.getInputStream();
-			
 			int status = ((HttpURLConnection) conn).getResponseCode();
 			
 			VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
-			
-			/*FileOutputStream fos = new FileOutputStream(file);
-			byte[] bytes = new byte[1024];
-			int length;
-			while ((length = response.read(bytes)) >= 0) {
-				fos.write(bytes, 0, length);
-			}
-			fos.close();*/
 			
 			/** 
 			 * NanoHttpd serve() is automatically called 
@@ -893,66 +996,87 @@ public class Operations {
 				VCSLogger.infoLogToCmd("CONFIG WRITE FAILURE.");
 			}
 			*/
-			String userHomeDir = System.getProperty("user.home");
+			
+			// ~UNZIP CODE
 			
 			String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
 			String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
 
-			String fileName = userHomeDir + "/" + fileNameWithoutExtn + ".zip";
+			String userWorkDir = System.getProperty("user.dir");
+			String filename = userWorkDir + "/" + fileNameWithoutExtn + ".zip";
 			
-			VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + fileName);
+			VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + filename);
+			
+			File srcFile = new File(filename);
+			
+			// create a directory with the same name to which the contents will be extracted
+			String zipPath = filename.substring(0, filename.length()-4);
+			File temp = new File(zipPath);
+			temp.mkdir();
+			
+			ZipFile zipFile = null;
 			
 			try {
-				ZipFile zipFile = new ZipFile(fileName);
-				Enumeration<?> enu = zipFile.entries();
-				while (enu.hasMoreElements()) {
-					ZipEntry zipEntry = (ZipEntry) enu.nextElement();
-
-					String name = zipEntry.getName();
-					long size = zipEntry.getSize();
-					long compressedSize = zipEntry.getCompressedSize();
-					System.out.printf("name: %-20s | size: %6d | compressed size: %6d\n", 
-							name, size, compressedSize);
-
-					File file = new File(name);
-					if (name.endsWith("/")) {
-						file.mkdirs();
+				
+				zipFile = new ZipFile(srcFile);
+				
+				// get an enumeration of the ZIP file entries
+				Enumeration<?> e = zipFile.entries();
+				
+				while (e.hasMoreElements()) {
+					
+					ZipEntry entry = (ZipEntry) e.nextElement();
+					
+					File destinationPath = new File(zipPath, entry.getName());
+					 
+					//create parent directories
+					destinationPath.getParentFile().mkdirs();
+					
+					// if the entry is a file extract it
+					if (entry.isDirectory()) {
 						continue;
 					}
+					else {
+						
+						System.out.println("Extracting file: " + destinationPath);
+						
+						BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
 
-					File parent = file.getParentFile();
-					if (parent != null) {
-						parent.mkdirs();
+						int b;
+						byte buffer[] = new byte[1024];
+
+						FileOutputStream fos = new FileOutputStream(destinationPath);
+						
+						BufferedOutputStream bos = new BufferedOutputStream(fos, 1024);
+
+						while ((b = bis.read(buffer, 0, 1024)) != -1) {
+							bos.write(buffer, 0, b);
+						}
+						
+						bos.close();
+						bis.close();
+						
 					}
-
-					InputStream is = zipFile.getInputStream(zipEntry);
-					FileOutputStream fos = new FileOutputStream(file);
-					byte[] bytes = new byte[1024];
-					int length;
-					while ((length = is.read(bytes)) >= 0) {
-						fos.write(bytes, 0, length);
-					}
-					is.close();
-					fos.close();
-
+					
 				}
-				zipFile.close();
-			} catch (IOException e) {
-				e.printStackTrace();
+				
 			}
-			
-			/* Code to see the content received from the server side.
-			FileOutputStream outStream = new FileOutputStream(new File(workDir));
-			
-			byte buffer[] = new byte[8192];
-			while(response.read(buffer) > 0){
-				outStream.write(buffer);
+			catch (IOException ioe) {
+				System.out.println("Error opening zip file" + ioe);
 			}
-			outStream.close();	
-			response.close();
-			*/
+			 finally {
+				 try {
+					 if (zipFile!=null) {
+						 zipFile.close();
+					 }
+				 }
+				 catch (IOException ioe) {
+						System.out.println("Error while closing zip file" + ioe);
+				 }
+			 }
 			
-		} 
+		} // ~UNZIP CODE 
+		
 		catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

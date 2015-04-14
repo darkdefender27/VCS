@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import analytics.AnalyticsEntryPoint;
+import analytics.TimeSeriesChart;
 
 import com.diff.core.Diff;
 import com.diff.core.FileDiffResult;
@@ -17,6 +18,8 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.time.RegularTimePeriod;
+import org.jfree.data.time.Week;
 
 public class EntryPoint extends JFrame {
 
@@ -73,31 +76,30 @@ public class EntryPoint extends JFrame {
 		 * "Which operating system are you using?"); demo.pack();
 		 * demo.setVisible(true);
 		 */
-		// ScatterPlot chart=new ScatterPlot("title","time","no of users");
-		// //float xArray[]={1f,2f,3f};
-		// //float yArray[]={50f,70f,65f};
-		// //chart.addToDataSet(xArray, yArray, "windows");
-		// //chart.addColName("Ubuntu");
-		// //chart.addColName("Mac");
-		// float xArrayNew[]={1f,2f,3f};
-		// float yArrayNew[]={33f,40f,12f};
-		// //RegularTimePeriod[] obj1=new Week[]{new Week(0,2015),new
-		// Week(1,2015),new Week(2,2015)};
-		// chart.addToDataSet(xArrayNew, yArrayNew, "temp");
-		// JFreeChart createdChart=chart.createChart();
-		// ChartPanel panel=new ChartPanel(createdChart);
-		// panel.setSize(new java.awt.Dimension(1000, 500));
-		// // add it to our application
-		// EntryPoint ep=new EntryPoint(panel);
-		// ep.setVisible(true);
+//		 TimeSeriesChart chart=new TimeSeriesChart("title","time","no of users");
+//		 //float xArray[]={1f,2f,3f};
+//		 //float yArray[]={50f,70f,65f};
+//		 //chart.addToDataSet(xArray, yArray, "windows");
+//		 //chart.addColName("Ubuntu");
+//		 //chart.addColName("Mac");
+//		 float xArrayNew[]={1f,2f,3f};
+//		 float yArrayNew[]={7f,20f};
+//		 RegularTimePeriod[] obj1=new Week[]{new Week(15,2015),new Week(16,2015)};
+//		 chart.addToDataSet(obj1, yArrayNew, "temp",false,7);
+//		 JFreeChart createdChart=chart.createChart();
+//		 ChartPanel panel=new ChartPanel(createdChart);
+//		 panel.setSize(new java.awt.Dimension(1000, 500));
+//		 // add it to our application
+//		 EntryPoint ep=new EntryPoint(panel);
+//		 ep.setVisible(true);
 
 //		String file1Contents, file2Contents, file3Contents;
 //		file1Contents = readFileIntoString("C:/Users/Ambarish/Desktop/vcsdebug/1.txt");
-//		file2Contents =readFileIntoString("C:/Users/Ambarish/Desktop/vcsdebug/2.txt");
+//		//file2Contents =readFileIntoString("C:/Users/Ambarish/Desktop/vcsdebug/2.txt");
 //		file2Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/1.txt");
 //		file3Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/VCS/1.txt");
 //		System.out.println("here");
-//		FileDiffResult result = null;
+////		FileDiffResult result = null;
 //		try {
 //			Diff obj=new Diff();
 //			result = obj.diff(file1Contents,file2Contents, null, false);
@@ -110,58 +112,61 @@ public class EntryPoint extends JFrame {
 //		} catch (Exception e) {
 //			System.out.println("here");
 //		}
-		// Diff obj=new Diff();
-		// MergeResult mr=obj.merge(file3Contents, file1Contents, file2Contents,
-		// null, false);
-		// if(!mr.isConflict())
-		// {
-		// System.out.println(mr.getDefaultMergedResult());
-		// }
-		// else
-		// {
-		// System.out.println("a conflict has been generated");
-		// int i=0,conflictNum=1;
-		// while(i<mr.getMergeItems().size())
-		// {
-		// MergeResultItem mri=mr.getMergeItems().get(i);
-		// if(mri.getType()==MergeResultItem.Type.CONFLICT)
-		// {
-		// System.out.println("Conflict Number "+conflictNum);
-		// System.out.println("                LEFT FILE");
-		// System.out.println();
-		// int j=0;
-		// while(j<mri.getLeftVersion().size())
-		// {
-		// System.out.println(mri.getLeftVersion().get(j).getContent());
-		// j++;
-		// }
-		// System.out.println();
-		//
-		// System.out.println("                RIGHT FILE");
-		// System.out.println();
-		// j=0;
-		// while(j<mri.getLeftVersion().size())
-		// {
-		// System.out.println(mri.getRightVersion().get(j).getContent());
-		// j++;
-		// }
-		// System.out.println();
-		// conflictNum++;
-		// }
-		// i++;
-		// }
-		//
-		// }
+//		Diff obj = new Diff();
+//		MergeResult mr = obj.merge(file3Contents, file1Contents, file2Contents,
+//				null, false);
+//		if (!mr.isConflict()) 
+//		{
+//			System.out.println(mr.getDefaultMergedResult());
+//		}
+//		else
+//		{
+//			System.out.println("a conflict has been generated");
+//			int i = 0, conflictNum = 1;
+//			while (i < mr.getMergeItems().size()) 
+//			{
+//				MergeResultItem mri = mr.getMergeItems().get(i);
+//				if (mri.getType() == MergeResultItem.Type.CONFLICT) 
+//				{
+//					System.out.println("Conflict Number " + conflictNum);
+//					System.out.println("                LEFT FILE");
+//					System.out.println();
+//					int j = 0;
+//					while (j < mri.getLeftVersion().size()) 
+//					{
+//						System.out.println(mri.getLeftVersion().get(j)
+//								.getContent());
+//						j++;
+//					}
+//					System.out.println();
+//
+//					System.out.println("                RIGHT FILE");
+//					System.out.println();
+//					j = 0;
+//					while (j < mri.getLeftVersion().size()) 
+//					{
+//						System.out.println(mri.getRightVersion().get(j)
+//								.getContent());
+//						j++;
+//					}
+//					System.out.println();
+//					conflictNum++;
+//				}
+//				i++;
+//			}
+//		 }
 
-		AnalyticsEntryPoint obj = new AnalyticsEntryPoint();
+		AnalyticsEntryPoint obj = new AnalyticsEntryPoint("C:/Users/Ambarish/Desktop/vcsdebug/");
 	}
 
 	public static String readFileIntoString(String completeFileName) 
 	{
 		String retVal = null;
-		try {
+		try 
+		{
 			retVal = new String(Files.readAllBytes(Paths.get(completeFileName)));
-		} catch (IOException e) {
+		} catch (IOException e) 
+		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
