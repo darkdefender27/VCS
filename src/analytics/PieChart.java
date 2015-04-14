@@ -97,4 +97,22 @@ public class PieChart
 	        plot.setLabelGap(0.02);
 	        return chart;
     }
+
+	public void addToDataSet(Object[] values, String string) {
+		// TODO Auto-generated method stub
+		if(dataset==null)
+		{
+			this.dataset=new DefaultPieDataset();
+		}
+		if(this.dataset!=null)
+		{
+			int i=0;
+			while(i<this.noOfCols)
+			{
+				this.dataset.setValue(colNames.get(i),(Number)values[i]);
+				i++;
+			}
+			this.noOfRows++;
+		}
+	}
 }

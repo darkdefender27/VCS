@@ -14,9 +14,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
-
 import javax.swing.JPanel;
-
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.time.Week;
@@ -50,8 +48,10 @@ public class ChartTab {
 		panel.setLayout(layout);
 		panel.setBackground(Color.BLACK);
 		Operations obj=new Operations();
+		PieChart extraChart;
 		JFreeChart jfChart=null;
-		if(xAxisParameter.equals("no of commits") && yAxisParameter.equals("week"))
+		JFreeChart extraJFChhart=null;
+		if(xAxisParameter.equals("no of commits") && yAxisParameter.equals("week"))              //=============================================================
 		{
 			
 			//Bar chart
@@ -166,39 +166,721 @@ public class ChartTab {
 			jfChart=chart.createChart();
 			
 		}
-		else if(xAxisParameter.equals("no of commits") && yAxisParameter.equals("developer"))
+		else if(xAxisParameter.equals("no of commits") && yAxisParameter.equals("developer"))              //=============================================================
 		{
-			
+			//pieChart
+			ArrayList<String> branches=new ArrayList<String>();
+			branches=getBranches();
+			int i=0,max=branches.size();
+			HashMap<String,Integer> hm=new HashMap<String, Integer>();
+			Queue<VCSCommit> que=new LinkedList<VCSCommit>();
+			VCSCommit head=null;
+			boolean branchSelected=false,devSelected=false;
+			if(whereClauseParameter.equals("branch") && !(whereClauseValue.equals("all")))
+			{
+				try 
+				{
+					head=obj.getCommitTreeFromHead(workingDir, whereClauseValue);
+					branchSelected=true;
+					max=1;
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					head=null;
+				}
+			}
+			else if(whereClauseParameter.equals("developer") && !(whereClauseValue.equals("all")))
+			{
+				devSelected=true;
+			}
+			while(i<max)
+			{
+				try 
+				{
+					if(branchSelected==false)
+					{
+						head=obj.getCommitTreeFromHead(workingDir, branches.get(i));
+					}
+					System.out.println(branches.get(i)+" "+head.getObjectHash());
+					que.add(head);
+					while(!que.isEmpty())
+					{
+						head=que.remove();
+						if(devSelected==false)
+						{
+							Integer temp=hm.get(head.getCommitter());
+							if(temp==null)
+							{
+								temp=0;
+							}
+							hm.put(head.getCommitter(), temp+1);
+						}
+						else
+						{
+							if(head.getCommitter().equals(whereClauseValue))
+							{
+								
+								Integer temp=hm.get(whereClauseValue);
+								if(temp==null)
+								{
+									temp=0;
+								}
+								hm.put(whereClauseValue, temp+1);
+							}
+						}
+						ArrayList<VCSCommit> parents=head.getParentCommits();
+						int j=0,size=parents.size();
+						System.out.println("j= "+j+" size= "+size);
+						while(j<size)
+						{
+							if(branchSelected==false)
+							{
+								if(parents.get(j).getBranchName().equals(branches.get(i)))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							else
+							{
+								if(parents.get(j).getBranchName().equals(whereClauseValue))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							j++;
+						}
+					}
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				i++;
+			}
+			PieChart chart=new PieChart(xAxisParameter +" vs " +yAxisParameter);
+			Set<String> set=hm.keySet();
+			Iterator<String> it=set.iterator();
+			String developer;
+			while(it.hasNext())
+			{
+				developer=it.next();
+				System.out.println("iterator " +developer);
+				chart.addColName(developer);
+			}
+			chart.addToDataSet( hm.values().toArray(), "temp");
+			jfChart=chart.createChart();
 		}
-		else if(xAxisParameter.equals("no of commits") && yAxisParameter.equals("branch"))
+		else if(xAxisParameter.equals("no of commits") && yAxisParameter.equals("branch"))              //=============================================================
 		{
-			
+			//pieChart
+			ArrayList<String> branches=new ArrayList<String>();
+			branches=getBranches();
+			int i=0,max=branches.size();
+			HashMap<String,Integer> hm=new HashMap<String, Integer>();
+			Queue<VCSCommit> que=new LinkedList<VCSCommit>();
+			VCSCommit head=null;
+			boolean branchSelected=false,devSelected=false;
+			if(whereClauseParameter.equals("branch") && !(whereClauseValue.equals("all")))
+			{
+				try 
+				{
+					head=obj.getCommitTreeFromHead(workingDir, whereClauseValue);
+					System.out.println("head is set and branchSelected=true  "+whereClauseValue +" head = "+head.getBranchName());
+					branchSelected=true;
+					max=1;
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					head=null;
+				}
+			}
+			else if(whereClauseParameter.equals("developer") && !(whereClauseValue.equals("all")))
+			{
+				devSelected=true;
+			}
+			while(i<max)
+			{
+				try 
+				{
+					if(branchSelected==false)
+					{
+						head=obj.getCommitTreeFromHead(workingDir, branches.get(i));
+					}
+					System.out.println(head.getBranchName()+" "+head.getObjectHash());
+					que.add(head);
+					while(!que.isEmpty())
+					{
+						head=que.remove();
+						if(devSelected==false)
+						{
+							Integer temp=hm.get(head.getBranchName());
+							if(temp==null)
+							{
+								temp=0;
+							}
+							System.out.println("branch name "+head.getBranchName() +" value " +(temp+1));
+							hm.put(head.getBranchName(), temp+1);
+						}
+						else
+						{
+							if(head.getCommitter().equals(whereClauseValue))
+							{
+								
+								Integer temp=hm.get(whereClauseValue);
+								if(temp==null)
+								{
+									temp=0;
+								}
+								hm.put(whereClauseValue, temp+1);
+							}
+						}
+						ArrayList<VCSCommit> parents=head.getParentCommits();
+						int j=0,size=parents.size();
+						System.out.println("j= "+j+" size= "+size);
+						while(j<size)
+						{
+							if(branchSelected==false)
+							{
+								if(parents.get(j).getBranchName().equals(branches.get(i)))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							else
+							{
+								if(parents.get(j).getBranchName().equals(whereClauseValue))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							j++;
+						}
+					}
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				i++;
+			}
+			BarChart chart=new BarChart(xAxisParameter +" vs " +yAxisParameter,yAxisParameter,xAxisParameter);
+			Set<String> set=hm.keySet();
+			Iterator<String> it=set.iterator();
+			String developer;
+			while(it.hasNext())
+			{
+				developer=it.next();
+				System.out.println("iterator " +developer);
+				chart.addColName(developer);
+			}
+			chart.addToDataSet( hm.values().toArray(), "temp");
+			jfChart=chart.createChart();
 		}
-		else if(xAxisParameter.equals("no of lines added & deleted") && yAxisParameter.equals("week"))
+		else if(xAxisParameter.equals("no of lines added & deleted") && yAxisParameter.equals("week"))              //=============================================================
 		{
-			
+			ArrayList<String> branches=new ArrayList<String>();
+			branches=getBranches();
+			int i=0,max=branches.size();
+			HashMap<Week, Integer> hmInserted=new HashMap<Week, Integer>();
+			HashMap<Week, Integer> hmDeleted=new HashMap<Week, Integer>();
+			Queue<VCSCommit> que=new LinkedList<VCSCommit>();
+			VCSCommit head=null;
+			boolean branchSelected=false,devSelected=false;
+			if(whereClauseParameter.equals("branch") && !(whereClauseValue.equals("all")))
+			{
+				try 
+				{
+					head=obj.getCommitTreeFromHead(workingDir, whereClauseValue);
+					branchSelected=true;
+					max=1;
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					head=null;
+				}
+			}
+			else if(whereClauseParameter.equals("developer") && !(whereClauseValue.equals("all")))
+			{
+				devSelected=true;
+			}
+			while(i<max)
+			{
+				try 
+				{
+					if(branchSelected==false)
+					{
+						head=obj.getCommitTreeFromHead(workingDir, branches.get(i));
+					}
+					System.out.println(branches.get(i)+" "+head.getObjectHash());
+					que.add(head);
+					while(!que.isEmpty())
+					{
+						head=que.remove();
+						if(devSelected==false)
+						{
+							Date d=new Date(head.getCommitTimestamp());
+							Week w=new Week(d);
+							Integer tempIns=hmInserted.get(w);
+							Integer tempDel=hmDeleted.get(w);
+							if(tempIns==null)
+							{
+								tempIns=0;
+							}
+							if(tempDel==null)
+							{
+								tempDel=0;
+							}
+							hmInserted.put(w, tempIns+head.getNoOfLinesInserted());
+							hmDeleted.put(w, tempDel+head.getNoOfLinesDeleted());
+						}
+						else
+						{
+							if(head.getCommitter().equals(whereClauseValue))
+							{
+								Date d=new Date(head.getCommitTimestamp());
+								Week w=new Week(d);
+								Integer tempIns=hmInserted.get(w);
+								Integer tempDel=hmDeleted.get(w);
+								if(tempIns==null)
+								{
+									tempIns=0;
+								}
+								if(tempDel==null)
+								{
+									tempDel=0;
+								}
+								hmInserted.put(w, tempIns+head.getNoOfLinesInserted());
+								hmDeleted.put(w, tempDel+head.getNoOfLinesDeleted());
+							}
+						}
+						ArrayList<VCSCommit> parents=head.getParentCommits();
+						int j=0,size=parents.size();
+						System.out.println("j= "+j+" size= "+size);
+						while(j<size)
+						{
+							if(branchSelected==false)
+							{
+								if(parents.get(j).getBranchName().equals(branches.get(i)))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							else
+							{
+								if(parents.get(j).getBranchName().equals(whereClauseValue))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							j++;
+						}
+					}
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				i++;
+			}
+			BarChart chart=new BarChart(xAxisParameter +" vs " +yAxisParameter,yAxisParameter, xAxisParameter );
+			System.out.println("keyset length " +hmInserted.get(hmInserted.keySet().toArray(new Week[5])[0]));
+			Set<Week> set=hmInserted.keySet();
+			Iterator<Week> it=set.iterator();
+			Week week;
+			while(it.hasNext())
+			{
+				week=it.next();
+				System.out.println("iterator" +week.getWeek()+" "+week.getYear());
+				chart.addColName(week.getWeek()+" "+week.getYear());
+			}
+			chart.addToDataSet( hmInserted.values().toArray(), "lines inserted");
+			chart.addToDataSet(hmDeleted.values().toArray(), "lines deleted");
+			jfChart=chart.createChart();
 		}
-		else if(xAxisParameter.equals("no of lines added & deleted") && yAxisParameter.equals("branch"))
+		else if(xAxisParameter.equals("no of lines added & deleted") && yAxisParameter.equals("branch"))              //=============================================================
 		{
-			
+			ArrayList<String> branches=new ArrayList<String>();
+			branches=getBranches();
+			int i=0,max=branches.size();
+			HashMap<String,Integer> hmInserted=new HashMap<String, Integer>();
+			HashMap<String,Integer> hmDeleted=new HashMap<String, Integer>();
+			Queue<VCSCommit> que=new LinkedList<VCSCommit>();
+			VCSCommit head=null;
+			boolean branchSelected=false,devSelected=false;
+			if(whereClauseParameter.equals("branch") && !(whereClauseValue.equals("all")))
+			{
+				try 
+				{
+					head=obj.getCommitTreeFromHead(workingDir, whereClauseValue);
+					System.out.println("head is set and branchSelected=true  "+whereClauseValue +" head = "+head.getBranchName());
+					branchSelected=true;
+					max=1;
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					head=null;
+				}
+			}
+			else if(whereClauseParameter.equals("developer") && !(whereClauseValue.equals("all")))
+			{
+				devSelected=true;
+			}
+			while(i<max)
+			{
+				try 
+				{
+					if(branchSelected==false)
+					{
+						head=obj.getCommitTreeFromHead(workingDir, branches.get(i));
+					}
+					System.out.println(head.getBranchName()+" "+head.getObjectHash());
+					que.add(head);
+					while(!que.isEmpty())
+					{
+						head=que.remove();
+						if(devSelected==false)
+						{
+							Integer tempIns=hmInserted.get(head.getBranchName());
+							Integer tempDel=hmDeleted.get(head.getBranchName());
+							if(tempIns==null)
+							{
+								tempIns=0;
+							}
+							if(tempDel==null)
+							{
+								tempDel=0;
+							}
+							System.out.println("branch name "+head.getBranchName() +" value " +(tempIns+head.getNoOfLinesInserted()));
+							hmInserted.put(head.getBranchName(), tempIns+head.getNoOfLinesInserted());
+							hmDeleted.put(head.getBranchName(), tempDel+head.getNoOfLinesDeleted());
+						}
+						else
+						{
+							if(head.getCommitter().equals(whereClauseValue))
+							{
+								
+								Integer tempIns=hmInserted.get(whereClauseValue);
+								Integer tempDel=hmDeleted.get(whereClauseValue);
+								if(tempIns==null)
+								{
+									tempIns=0;
+								}
+								if(tempDel==null)
+								{
+									tempDel=0;
+								}
+								hmInserted.put(head.getBranchName(), tempIns+head.getNoOfLinesInserted());
+								hmDeleted.put(head.getBranchName(), tempDel+head.getNoOfLinesDeleted());
+							}
+						}
+						ArrayList<VCSCommit> parents=head.getParentCommits();
+						int j=0,size=parents.size();
+						System.out.println("j= "+j+" size= "+size);
+						while(j<size)
+						{
+							if(branchSelected==false)
+							{
+								if(parents.get(j).getBranchName().equals(branches.get(i)))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							else
+							{
+								if(parents.get(j).getBranchName().equals(whereClauseValue))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							j++;
+						}
+					}
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				i++;
+			}
+			BarChart chart=new BarChart(xAxisParameter +" vs " +yAxisParameter,yAxisParameter,xAxisParameter);
+			Set<String> set=hmInserted.keySet();
+			Iterator<String> it=set.iterator();
+			String branch;
+			while(it.hasNext())
+			{
+				branch=it.next();
+				System.out.println("iterator " +branch);
+				chart.addColName(branch);
+			}
+			chart.addToDataSet( hmInserted.values().toArray(), "lines inserted");
+			chart.addToDataSet( hmDeleted.values().toArray(), "lines deleted");
+			jfChart=chart.createChart();
 		}
-		else if(xAxisParameter.equals("no of lines added & deleted") && yAxisParameter.equals("developer"))
+		else if(xAxisParameter.equals("no of lines added & deleted") && yAxisParameter.equals("developer"))              //=============================================================
 		{
-			
+			ArrayList<String> branches=new ArrayList<String>();
+			branches=getBranches();
+			int i=0,max=branches.size();
+			HashMap<String,Integer> hmInserted=new HashMap<String, Integer>();
+			HashMap<String,Integer> hmDeleted=new HashMap<String, Integer>();
+			Queue<VCSCommit> que=new LinkedList<VCSCommit>();
+			VCSCommit head=null;
+			boolean branchSelected=false,devSelected=false;
+			if(whereClauseParameter.equals("branch") && !(whereClauseValue.equals("all")))
+			{
+				try 
+				{
+					head=obj.getCommitTreeFromHead(workingDir, whereClauseValue);
+					branchSelected=true;
+					max=1;
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					head=null;
+				}
+			}
+			else if(whereClauseParameter.equals("developer") && !(whereClauseValue.equals("all")))
+			{
+				devSelected=true;
+			}
+			while(i<max)
+			{
+				try 
+				{
+					if(branchSelected==false)
+					{
+						head=obj.getCommitTreeFromHead(workingDir, branches.get(i));
+					}
+					System.out.println(branches.get(i)+" "+head.getObjectHash());
+					que.add(head);
+					while(!que.isEmpty())
+					{
+						head=que.remove();
+						if(devSelected==false)
+						{
+							Integer tempIns=hmInserted.get(head.getCommitter());
+							Integer tempDel=hmDeleted.get(head.getCommitter());
+							if(tempIns==null)
+							{
+								tempIns=0;
+							}
+							if(tempDel==null)
+							{
+								tempDel=0;
+							}
+							hmInserted.put(head.getCommitter(), tempIns+head.getNoOfLinesInserted());
+							hmDeleted.put(head.getCommitter(), tempDel+head.getNoOfLinesDeleted());
+						}
+						else
+						{
+							if(head.getCommitter().equals(whereClauseValue))
+							{
+								
+								Integer tempIns=hmInserted.get(whereClauseValue);
+								Integer tempDel=hmDeleted.get(whereClauseValue);
+								if(tempIns==null)
+								{
+									tempIns=0;
+								}
+								if(tempDel==null)
+								{
+									tempDel=0;
+								}
+								hmInserted.put(whereClauseValue, tempIns+head.getNoOfLinesInserted());
+								hmDeleted.put(whereClauseValue, tempDel+head.getNoOfLinesDeleted());
+							}
+						}
+						ArrayList<VCSCommit> parents=head.getParentCommits();
+						int j=0,size=parents.size();
+						System.out.println("j= "+j+" size= "+size);
+						while(j<size)
+						{
+							if(branchSelected==false)
+							{
+								if(parents.get(j).getBranchName().equals(branches.get(i)))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							else
+							{
+								if(parents.get(j).getBranchName().equals(whereClauseValue))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							j++;
+						}
+					}
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				i++;
+			}
+			PieChart chart=new PieChart(xAxisParameter +" vs " +yAxisParameter);
+			extraChart=new PieChart(xAxisParameter +" vs " +yAxisParameter);
+			Set<String> set=hmInserted.keySet();
+			Iterator<String> it=set.iterator();
+			String developer;
+			while(it.hasNext())
+			{
+				developer=it.next();
+				System.out.println("iterator " +developer);
+				chart.addColName(developer);
+				extraChart.addColName(developer);
+			}
+			chart.addToDataSet( hmInserted.values().toArray(), "inserted");
+			extraChart.addToDataSet( hmDeleted.values().toArray(), "deleted");
+			jfChart=chart.createChart();
+			extraJFChhart=extraChart.createChart();
 		}
-		else if(xAxisParameter.equals("no of lines added & deleted") && yAxisParameter.equals("commit"))
+		else if(xAxisParameter.equals("no of developers") && yAxisParameter.equals("branch"))              //=============================================================
 		{
-			
-		}
-		else if(xAxisParameter.equals("no of developers") && yAxisParameter.equals("branch"))
-		{
-			
+			ArrayList<String> branches=new ArrayList<String>();
+			branches=getBranches();
+			int i=0,max=branches.size();
+			HashMap<String,Integer> hm=new HashMap<String, Integer>();
+			Queue<VCSCommit> que=new LinkedList<VCSCommit>();
+			VCSCommit head=null;
+			boolean branchSelected=false,devSelected=false;
+			if(whereClauseParameter.equals("branch") && !(whereClauseValue.equals("all")))
+			{
+				try 
+				{
+					head=obj.getCommitTreeFromHead(workingDir, whereClauseValue);
+					System.out.println("head is set and branchSelected=true  "+whereClauseValue +" head = "+head.getBranchName());
+					branchSelected=true;
+					max=1;
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					head=null;
+				}
+			}
+			else if(whereClauseParameter.equals("developer") && !(whereClauseValue.equals("all")))
+			{
+				devSelected=true;
+			}
+			while(i<max)
+			{
+				try 
+				{
+					if(branchSelected==false)
+					{
+						head=obj.getCommitTreeFromHead(workingDir, branches.get(i));
+					}
+					System.out.println(head.getBranchName()+" "+head.getObjectHash());
+					que.add(head);
+					while(!que.isEmpty())
+					{
+						head=que.remove();
+						if(devSelected==false)
+						{
+							Integer temp=hm.get(head.getBranchName());
+							if(temp==null)
+							{
+								temp=0;
+							}
+							System.out.println("branch name "+head.getBranchName() +" value " +(temp+1));
+							hm.put(head.getBranchName(), temp+1);
+						}
+						else
+						{
+							if(head.getCommitter().equals(whereClauseValue))
+							{
+								
+								Integer temp=hm.get(whereClauseValue);
+								if(temp==null)
+								{
+									temp=0;
+								}
+								hm.put(whereClauseValue, temp+1);
+							}
+						}
+						ArrayList<VCSCommit> parents=head.getParentCommits();
+						int j=0,size=parents.size();
+						System.out.println("j= "+j+" size= "+size);
+						while(j<size)
+						{
+							if(branchSelected==false)
+							{
+								if(parents.get(j).getBranchName().equals(branches.get(i)))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							else
+							{
+								if(parents.get(j).getBranchName().equals(whereClauseValue))
+								{
+									System.out.println("parent "+branches.get(i)+" "+parents.get(j).getObjectHash());
+									que.add(parents.get(j));
+								}
+							}
+							j++;
+						}
+					}
+				}
+				catch (IOException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				i++;
+			}
+			BarChart chart=new BarChart(xAxisParameter +" vs " +yAxisParameter,yAxisParameter,xAxisParameter);
+			Set<String> set=hm.keySet();
+			Iterator<String> it=set.iterator();
+			String developer;
+			while(it.hasNext())
+			{
+				developer=it.next();
+				System.out.println("iterator " +developer);
+				chart.addColName(developer);
+			}
+			chart.addToDataSet( hm.values().toArray(), "temp");
+			jfChart=chart.createChart();
 		}
 		//get chart n set
 		if(jfChart!=null)
 		{
 			ChartPanel cp=new ChartPanel(jfChart);
 			panel.add(cp);
+			if(extraJFChhart!=null)
+			{
+				ChartPanel temp=new ChartPanel(extraJFChhart);
+				panel.add(temp);
+			}
 		}
 		
 		return panel;
@@ -233,6 +915,7 @@ public class ChartTab {
 		return branchesList;
 	}
 
+	@SuppressWarnings("unused")
 	private ArrayList<String> getDevelopers()
 	{
 		String devListFile= workingDir +"/" +Constants.VCSFOLDER +"/" +Constants.DEVELOPERS_FILE;
