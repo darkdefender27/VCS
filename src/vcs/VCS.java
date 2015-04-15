@@ -85,6 +85,35 @@ public class VCS {
 				e.printStackTrace();
 			}
 		}
+		else
+		{
+			System.out.println("here");
+			try 
+			{
+				boolean created=f.createNewFile();
+				if(created)
+				{
+					BufferedWriter bw=new BufferedWriter(new FileWriter(f));
+					bw.append("[user]");
+					bw.append("\n");
+					bw.append("\t");
+					bw.append("name=");
+					bw.append("newUser");
+					bw.append("\n");
+					bw.append("\t");
+					bw.append("email=");
+					bw.append("newUser@newUser.com");
+					bw.close();
+					retVal="newUser";
+				}
+				
+			} 
+			catch (IOException e) 
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		return retVal;
 	}
 
@@ -92,9 +121,9 @@ public class VCS {
 	{
 		String userName=null;
 		
-		//String cmdArgs = "init C:/Users/Ambarish/Desktop/vcsdebug/";
+		String cmdArgs = "init C:/Users/Ambarish/Desktop/tempVCSDebug/";
 		//String cmdArgs = "add C:/Users/Ambarish/Desktop/vcsdebug/ *";
-		String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ master_4";
+		//String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ master_4";
 		//String cmdArgs = "create C:/Users/Ambarish/Desktop/vcsdebug/ branch b1 a46a7d06dbbcdef2d9ab10365e634edc9a629a7c593df712017ca31c31e33";
 		//String cmdArgs ="switch C:/Users/Ambarish/Desktop/vcsdebug/ branch master";
 		args = cmdArgs.split(" ");
@@ -216,7 +245,9 @@ public class VCS {
 					if(status) VCSLogger.infoLogToCmd("Successfully checked out");
 				}
 				if(args[0].equals("commit") && argLength == 3){
-					//commit workDir user message
+					
+					//commit workDir message
+					
 					String workingDir = args[1];
 					String message = args[2];
 					BufferedReader br = null;
@@ -237,7 +268,7 @@ public class VCS {
 							
 							VCSCommit parent =  ops.getHead(workingDir);
 							
-							userName="darkDefender";
+							//userName="darkDefender";
 							
 							String commitHash = ops.commit(stagedFiles, parent, message, userName, userName, workingDir);
 				    	    ops.writeHead(workingDir, commitHash);
