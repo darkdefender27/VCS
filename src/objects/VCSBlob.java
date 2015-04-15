@@ -35,6 +35,14 @@ public class VCSBlob extends AbstractVCSTree{
 		//VCSLogger.debugLogToCmd("VCSBlob#", diskPath + " blob restored");
 	}
 	
+	public VCSBlob(String objectHash,String workingDirectory,String diskPath,String name,String tmpDirName){
+		super(objectHash,workingDirectory,diskPath,name);
+		this.readFromTempDir = true;
+		this.readOpSourceTempDirName = tmpDirName;
+		this.type = "blob";
+		//VCSLogger.debugLogToCmd("VCSBlob#", diskPath + " blob restored");
+	}
+	
 	/**
 	 * Creates instance form <code>un hashed file</code> which is stored on disk.
 	 * It generates <code>SHA256</code> hash from the <code>file content<code> in the process.

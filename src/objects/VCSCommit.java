@@ -126,9 +126,19 @@ public class VCSCommit extends VCSObject
 		this.objectHash = objectHash;
 		this.importFlag = importFlag;
 		createInMemory();
-		//VCSLogger.debugLogToCmd("VCSCommit#", objectHash + " commit restored");
+		VCSLogger.debugLogToCmd("VCSCommit#", objectHash + " commit restored");
 	}
 
+	public VCSCommit(String objectHash,String workingDirectory,int importFlag,String tmpDirName){
+		super(workingDirectory);
+		this.readFromTempDir = true;
+		this.readOpSourceTempDirName = tmpDirName;
+		this.objectHash = objectHash;
+		this.importFlag = importFlag;
+		createInMemory();
+		VCSLogger.debugLogToCmd("VCSCommit#", objectHash + " commit restored");
+	}
+	
 	/**
 	 * Returns commit object hash.
 	 */
@@ -225,8 +235,13 @@ public class VCSCommit extends VCSObject
 				if(commitFeatures.length != 1){
 					parentCommit = commitFeatures[1];
 					if(importFlag == IMPORT_COMMITS){
-						this.parents.add(
+						if(!this.readFromTempDir){
+							this.parents.add(
 								new VCSCommit(parentCommit, workingDirectory,IMPORT_COMMITS));
+						}else{
+							this.parents.add(
+									new VCSCommit(parentCommit, workingDirectory,IMPORT_COMMITS,readOpSourceTempDirName));
+						}
 					}
 				}
 			}
@@ -240,7 +255,11 @@ public class VCSCommit extends VCSObject
 			this.commitTimestamp=Long.parseLong(commitItemsInString[numberOfParents + 7].split(SEPARATOR)[0]);
 			this.branchName=commitItemsInString[numberOfParents+8].split(SEPARATOR)[0];
 			if(importFlag == IMPORT_TREE){
-				this.tree =new VCSTree(tree, workingDirectory,workingDirectory + treeRelativePath,treeName);
+				if(!this.readFromTempDir){
+					this.tree =new VCSTree(tree, workingDirectory,workingDirectory + treeRelativePath,treeName);
+				}else{
+					this.tree =new VCSTree(tree, workingDirectory,workingDirectory + treeRelativePath,treeName,readOpSourceTempDirName);
+				}
 			}
 			return true;
 		}

@@ -11,6 +11,7 @@ import java.util.zip.InflaterInputStream;
 
 import logger.VCSLogger;
 
+import vcs.Constants;
 import vcs.Operations;
 
 /**
@@ -135,6 +136,9 @@ public abstract class VCSObject {
 		return false;
 	}
 	
+	protected boolean readFromTempDir;
+	protected String readOpSourceTempDirName;
+	
 	/**
 	 * Reads and un hashes object.
 	 * @return String Decompressed Object Content
@@ -142,8 +146,14 @@ public abstract class VCSObject {
 	protected String decompressObject(){
 		//System.out.println("Decompress object");
 		try{
+			String objectFile = null;
+			if(!readFromTempDir){
+				objectFile= Operations.getObjectsFolder(workingDirectory);
+			}else{
+				objectFile = workingDirectory + ".vcs/" + readOpSourceTempDirName + "/.vcs/" + Constants.OBJECTS_FOLDER;
+			}
 			
-			String objectFile = Operations.getObjectsFolder(workingDirectory) + "/" + objectHash.charAt(0) + objectHash.charAt(1) + "/" + objectHash.substring(2, objectHash.length());
+			objectFile += "/" + objectHash.charAt(0) + objectHash.charAt(1) + "/" + objectHash.substring(2, objectHash.length());
 			//System.out.println(objectFile);
 			File diskObjectFile = new File(objectFile);
         	if(diskObjectFile.exists()){

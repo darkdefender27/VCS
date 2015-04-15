@@ -35,6 +35,17 @@ public class VCSTree extends AbstractVCSTree{
 		//VCSLogger.debugLogToCmd("VCSTree#", diskPath +" tree restored");
 	}
 	
+	public VCSTree(String objectHash,String workingDirectory,String diskPath,String name,String tmpDirName){
+		super(objectHash,workingDirectory,diskPath,name);
+		this.readFromTempDir = true;
+		this.readOpSourceTempDirName = tmpDirName;
+		immediateChildren = new ArrayList<AbstractVCSTree>();
+		this.type = "tree";
+		generatingFromHash = true;
+		createInMemory();
+		//VCSLogger.debugLogToCmd("VCSTree#", diskPath +" tree restored");
+	}
+	
 	private boolean generatingFromHash;
 	/**
 	 * Creates instance from unhashed folder entity.
@@ -206,11 +217,19 @@ public class VCSTree extends AbstractVCSTree{
 			//System.out.println("Name = " + objectName);
 			if(objectType.equals("tree")){
 				objectPath = diskPath +objectName + "/";
-				object = new VCSTree(objectHash, workingDirectory,objectPath,objectName);
+				if(!this.readFromTempDir){
+					object = new VCSTree(objectHash, workingDirectory,objectPath,objectName);
+				}else{
+					object = new VCSTree(objectHash, workingDirectory,objectPath,objectName,this.readOpSourceTempDirName);
+				}
 			}
 			else if(objectType.equals("blob")){
 				objectPath = diskPath + objectName;
-				object = new VCSBlob(objectHash, workingDirectory,objectPath,objectName);
+				if(!readFromTempDir){
+					object = new VCSBlob(objectHash, workingDirectory,objectPath,objectName);
+				}else{
+					object = new VCSBlob(objectHash, workingDirectory,objectPath,objectName,readOpSourceTempDirName);
+				}
 			}
 			addItem(object);
 		}
