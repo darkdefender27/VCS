@@ -120,12 +120,12 @@ public class VCS {
 	public static void main(String[] args)
 	{
 		String userName=null;
+		//place your cmdArgs here if required
 		
-		String cmdArgs = "init C:/Users/Ambarish/Desktop/tempVCSDebug/";
-		//String cmdArgs = "add C:/Users/Ambarish/Desktop/vcsdebug/ *";
-		//String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ master_4";
-		//String cmdArgs = "create C:/Users/Ambarish/Desktop/vcsdebug/ branch b1 a46a7d06dbbcdef2d9ab10365e634edc9a629a7c593df712017ca31c31e33";
-		//String cmdArgs ="switch C:/Users/Ambarish/Desktop/vcsdebug/ branch master";
+		
+		
+		//end of cmdArgs
+		
 		args = cmdArgs.split(" ");
 		userName=getUserName();
 		args[1] = replaceHashWithSpace(args[1]);
