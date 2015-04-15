@@ -93,14 +93,15 @@ public class EntryPoint extends JFrame {
 //		 EntryPoint ep=new EntryPoint(panel);
 //		 ep.setVisible(true);
 
-//		String file1Contents, file2Contents, file3Contents;
-//		file1Contents = readFileIntoString("C:/Users/Ambarish/Desktop/vcsdebug/1.txt");
-//		//file2Contents =readFileIntoString("C:/Users/Ambarish/Desktop/vcsdebug/2.txt");
-//		file2Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/1.txt");
-//		file3Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/VCS/1.txt");
-//		System.out.println("here");
-////		FileDiffResult result = null;
-//		try {
+		String file1Contents, file2Contents, file3Contents;
+		file1Contents = readFileIntoString("C:/Users/Ambarish/Desktop/vcsdebug/1.txt");
+		//file2Contents =readFileIntoString("C:/Users/Ambarish/Desktop/vcsdebug/2.txt");
+		file2Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/1.txt");
+		file3Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/VCS/1.txt");
+		//System.out.println("here");
+		//FileDiffResult result = null;
+//		try 
+//		{
 //			Diff obj=new Diff();
 //			result = obj.diff(file1Contents,file2Contents, null, false);
 //			System.out.println(result.getLineResult().getNoOfLinesAdded()
@@ -112,51 +113,73 @@ public class EntryPoint extends JFrame {
 //		} catch (Exception e) {
 //			System.out.println("here");
 //		}
-//		Diff obj = new Diff();
-//		MergeResult mr = obj.merge(file3Contents, file1Contents, file2Contents,
-//				null, false);
-//		if (!mr.isConflict()) 
-//		{
-//			System.out.println(mr.getDefaultMergedResult());
-//		}
-//		else
-//		{
-//			System.out.println("a conflict has been generated");
-//			int i = 0, conflictNum = 1;
-//			while (i < mr.getMergeItems().size()) 
-//			{
-//				MergeResultItem mri = mr.getMergeItems().get(i);
-//				if (mri.getType() == MergeResultItem.Type.CONFLICT) 
-//				{
-//					System.out.println("Conflict Number " + conflictNum);
-//					System.out.println("                LEFT FILE");
-//					System.out.println();
-//					int j = 0;
-//					while (j < mri.getLeftVersion().size()) 
-//					{
-//						System.out.println(mri.getLeftVersion().get(j)
-//								.getContent());
-//						j++;
-//					}
-//					System.out.println();
-//
-//					System.out.println("                RIGHT FILE");
-//					System.out.println();
-//					j = 0;
-//					while (j < mri.getLeftVersion().size()) 
-//					{
-//						System.out.println(mri.getRightVersion().get(j)
-//								.getContent());
-//						j++;
-//					}
-//					System.out.println();
-//					conflictNum++;
-//				}
-//				i++;
-//			}
-//		 }
-
-		AnalyticsEntryPoint obj = new AnalyticsEntryPoint("C:/Users/Ambarish/Desktop/vcsdebug/");
+		String result=getMergeResult(file3Contents, file1Contents, file2Contents, "master", "master", "a0354f", "45utnkla2");
+		System.out.println(result);
+		//AnalyticsEntryPoint obj = new AnalyticsEntryPoint("C:/Users/Ambarish/Desktop/vcsdebug/");
+	}
+	
+	public static String getMergeResult(String commonAncestor,String version1, String version2,String leftBranchName, String rightBranchName,String leftCommitId,String rightCommitId)
+	{
+		String retVal=null;
+		Diff obj = new Diff();
+		MergeResult mr = obj.merge(commonAncestor, version1, version2,null, false);
+		if (!mr.isConflict()) 
+		{
+			retVal=mr.getDefaultMergedResult();
+		}
+		else
+		{
+			StringBuilder sb=new StringBuilder();
+			int i = 0;
+			while (i < mr.getMergeItems().size()) 
+			{
+				MergeResultItem mri = mr.getMergeItems().get(i);
+				if (mri.getType() == MergeResultItem.Type.CONFLICT)
+				{
+					int j = 0;
+					sb.append("====================================");
+					sb.append(leftBranchName);
+					sb.append("          ");
+					sb.append(leftCommitId);
+					sb.append(System.lineSeparator());
+					
+					while (j < mri.getLeftVersion().size()) 
+					{
+						sb.append(mri.getLeftVersion().get(j).getContent());
+						sb.append(System.lineSeparator());
+						j++;
+					}
+					
+					sb.append(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+					sb.append(rightBranchName);
+					sb.append("          ");
+					sb.append(rightCommitId);
+					sb.append(System.lineSeparator());
+					j = 0;
+					while (j < mri.getLeftVersion().size()) 
+					{
+						sb.append(mri.getRightVersion().get(j).getContent());
+						sb.append(System.lineSeparator());
+						j++;
+					}
+					sb.append("------------------------------------");
+				}
+				else
+				{
+					int k=0,max;
+					max=mri.getLeftVersion().size();
+					while(k<max)
+					{
+						sb.append(mri.getLeftVersion().get(k));
+						sb.append(System.lineSeparator());
+						k++;
+					}
+				}
+				i++;
+			}
+			retVal=sb.toString();
+		 }
+		return retVal;
 	}
 
 	public static String readFileIntoString(String completeFileName) 
