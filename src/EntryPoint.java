@@ -93,11 +93,11 @@ public class EntryPoint extends JFrame {
 //		 EntryPoint ep=new EntryPoint(panel);
 //		 ep.setVisible(true);
 
-		String file1Contents, file2Contents, file3Contents;
-		file1Contents = readFileIntoString("C:/Users/Ambarish/Desktop/vcsdebug/1.txt");
-		//file2Contents =readFileIntoString("C:/Users/Ambarish/Desktop/vcsdebug/2.txt");
-		file2Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/1.txt");
-		file3Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/VCS/1.txt");
+//		String file1Contents, file2Contents, file3Contents;
+//		file1Contents = readFileIntoString("C:/Users/Ambarish/Desktop/vcsdebug/1.txt");
+//		//file2Contents =readFileIntoString("C:/Users/Ambarish/Desktop/vcsdebug/2.txt");
+//		file2Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/1.txt");
+//		file3Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/VCS/1.txt");
 		//System.out.println("here");
 		//FileDiffResult result = null;
 //		try 
@@ -113,9 +113,9 @@ public class EntryPoint extends JFrame {
 //		} catch (Exception e) {
 //			System.out.println("here");
 //		}
-		String result=getMergeResult(file3Contents, file1Contents, file2Contents, "master", "master", "a0354f", "45utnkla2");
-		System.out.println(result);
-		//AnalyticsEntryPoint obj = new AnalyticsEntryPoint("C:/Users/Ambarish/Desktop/vcsdebug/");
+//		String result=getMergeResult(file3Contents, file1Contents, file2Contents, "master", "master", "a0354f", "45utnkla2");
+//		System.out.println(result);
+		AnalyticsEntryPoint obj = new AnalyticsEntryPoint("C:/Users/Ambarish/Desktop/vcsdebug/");
 	}
 	
 	public static String getMergeResult(String commonAncestor,String version1, String version2,String leftBranchName, String rightBranchName,String leftCommitId,String rightCommitId)

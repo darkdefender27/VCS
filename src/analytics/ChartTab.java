@@ -767,6 +767,7 @@ public class ChartTab {
 			branches=getBranches();
 			int i=0,max=branches.size();
 			HashMap<String,Integer> hm=new HashMap<String, Integer>();
+			ArrayList<String> noOfDevelopers =new ArrayList<String>();
 			Queue<VCSCommit> que=new LinkedList<VCSCommit>();
 			VCSCommit head=null;
 			boolean branchSelected=false,devSelected=false;
@@ -788,10 +789,12 @@ public class ChartTab {
 			}
 			else if(whereClauseParameter.equals("developer") && !(whereClauseValue.equals("all")))
 			{
-				devSelected=true;
+				//no meaning to this case
+				//devSelected=true;
 			}
 			while(i<max)
 			{
+				noOfDevelopers.clear();
 				try 
 				{
 					if(branchSelected==false)
@@ -805,13 +808,13 @@ public class ChartTab {
 						head=que.remove();
 						if(devSelected==false)
 						{
-							Integer temp=hm.get(head.getBranchName());
-							if(temp==null)
+							boolean temp=noOfDevelopers.contains(head.getCommitter());
+							if(temp==false)
 							{
-								temp=0;
+								noOfDevelopers.add(head.getCommitter());
 							}
-							System.out.println("branch name "+head.getBranchName() +" value " +(temp+1));
-							hm.put(head.getBranchName(), temp+1);
+							System.out.println("branch name "+head.getBranchName() +" value " +(noOfDevelopers.size()));
+							hm.put(head.getBranchName(), noOfDevelopers.size());
 						}
 						else
 						{
