@@ -121,16 +121,13 @@ public class VCS {
 	{
 		String userName=null;
 		//place your cmdArgs here if required
-		
-		
-		
-		//end of cmdArgs
-		
-		args = cmdArgs.split(" ");
-		userName=getUserName();
-		args[1] = replaceHashWithSpace(args[1]);
 		//args = cmdArgs.split(" ");
 		//args[1] = replaceHashWithSpace(args[1]);
+		//end of cmdArgs
+		
+		userName=getUserName();
+		args[1] = replaceHashWithSpace(args[1]);
+		
 		boolean flag = false;
 		int argLength = args.length;
 		if( argLength >= 1){

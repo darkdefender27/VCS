@@ -16,7 +16,7 @@ public class NetworkOps {
     	String userHomeDir = System.getProperty("user.home");
     	
     	String party[] = repoName.split("\\.");
-    	String OUTPUT_ZIP_FILE = userHomeDir + "/" + party[0];
+    	//String OUTPUT_ZIP_FILE = userHomeDir + "/" + party[0];
 
     	//MAP the uri's to Absolute Path (repoName [abcd.vcs] -> absolutePath of root directory)
     	String SOURCE_FOLDER = null;
@@ -43,7 +43,7 @@ public class NetworkOps {
     	//String SOURCE_FOLDER = "/home/shubham/VCSTemp/VCSDebug/VCSD_1_2/.vcs";
     	VCSLogger.infoLogToCmd("SOURCE Folder Absolute Path: " + SOURCE_FOLDER);
     	
-    	File f = new File(OUTPUT_ZIP_FILE);
+    	//File f = new File(OUTPUT_ZIP_FILE);
     	
     	//Compress the content on absolute path obtained from above
     	if(!SOURCE_FOLDER.equals(null)) {
@@ -53,12 +53,15 @@ public class NetworkOps {
 
     		ZipDirectory.getAllFiles(directoryToZip, fileList);
     		ZipDirectory.writeZipFile(directoryToZip, fileList); //Writes to the working directory
-    		VCSLogger.infoLogToCmd("---Done");     	
+    		VCSLogger.infoLogToCmd("---Done");
     	}
     	else {
     		VCSLogger.infoLogToCmd("The repositiory is Empty or not instantiated on this local machine.");
     	}
-    	
+    	String userWorkDir = System.getProperty("user.dir");
+    	String fname = userWorkDir + "/" + party[0] + ".zip";
+    	VCSLogger.infoLogToCmd("OUTPUT_ZIP_FILE: " + fname);
+    	File f = new File(fname);
     	// Return Compressed File
 		return f;
 	}

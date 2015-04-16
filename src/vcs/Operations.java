@@ -949,44 +949,49 @@ public class Operations {
 	
 	public String clone(String repoUrl,String workDir){
 		URLConnection conn;
+		/** 
+		 * NanoHttpd serve() is automatically called 
+		 * and the response is stored in the InputStream variable response.
+		 * 
+		 * 1.) Now Unzip the .zip file received from the server and  
+		 * generate a local directory for the same with an updated config file. and extra updates (?Check)
+		 * 2.) On success, we add the remote repoUrl in config file with handle `origin`
+		 * config:
+		 * [remote 'origin'] url = repoUrl or http://127.0.0.1:8080/VCSD_1_1.vcs
+		 */
+
 		try {
 			conn = new URL(repoUrl + "?REQUEST=CLONE").openConnection();
 			//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
 			conn.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
 			conn.setRequestProperty("Accept","*/*");
+			VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
 			
-			int status = ((HttpURLConnection) conn).getResponseCode();
-			
-			VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
-			
-			/** 
-			 * NanoHttpd serve() is automatically called 
-			 * and the response is stored in the InputStream variable response.
-			 * 
-			 * 1.) Now Unzip the .zip file received from the server and  
-			 * generate a local directory for the same with an updated config file. and extra updates (?Check)
-			 * 2.) On success, we add the remote repoUrl in config file with handle `origin`
-			 * config:
-			 * [remote 'origin'] url = repoUrl or http://127.0.0.1:8080/VCSD_1_1.vcs
-			 */
-			/*
-			boolean writeStatus = writeCloneConfig(workDir, repoUrl);
-			if(writeStatus){
-				VCSLogger.infoLogToCmd("CONFIG WRITE SUCCESS.");
-			}
-			else {
-				VCSLogger.infoLogToCmd("CONFIG WRITE FAILURE.");
-			}
-			*/
-			
-			// ~UNZIP CODE
+			//int status = ((HttpURLConnection) conn).getResponseCode();
+			//VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
 			
 			String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
 			String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
 
 			String userWorkDir = System.getProperty("user.dir");
-			String filename = userWorkDir + "/" + fileNameWithoutExtn + ".zip";
+			String userHomeDir = System.getProperty("user.home");
 			
+			//Receives Response from server (Check SimpleWebServer.java and stores in response InputStream)
+			InputStream response = conn.getInputStream();
+		
+			// Code to see the content received from the server side.
+			//New file created from the received response.
+			FileOutputStream outStream = new FileOutputStream(new File(userWorkDir + File.separator + fileNameWithoutExtn + ".zip"));
+			
+			byte buf[] = new byte[8192];
+			while(response.read(buf) > 0){
+				outStream.write(buf);
+			}
+			outStream.close();
+			response.close();
+			
+			// ~UNZIP CODE
+			String filename = userWorkDir + File.separator + fileNameWithoutExtn + ".zip";			
 			VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + filename);
 			
 			File srcFile = new File(filename);
@@ -1044,7 +1049,7 @@ public class Operations {
 				
 			}
 			catch (IOException ioe) {
-				System.out.println("Error opening zip file" + ioe);
+				System.out.println("Error opening zip file: " + ioe);
 			}
 			 finally {
 				 try {

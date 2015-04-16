@@ -4,6 +4,8 @@ import java.io.*;
 import java.net.URLEncoder;
 import java.util.*;
 
+import logger.VCSLogger;
+
 /**
  * An example of subclassing NanoHTTPD to make a custom HTTP server.
  */
@@ -56,8 +58,8 @@ public class SimpleWebServer extends NanoHTTPD {
 		if (uri.contains(".vcs")) {
 			uri = uri.substring(1, uri.length());
 			String request = parms.get("REQUEST");
-			
-			//Check the ?REEQUEST parameter for value: CLONE
+			VCSLogger.infoLogToCmd("SERVER RECV." + request);
+			//Check the ?REQUEST parameter for value: CLONE
 			if (request != null) {
 				if (parms.get("REQUEST").equals("CLONE")) {
 					System.out.println("URI = " + uri); // Example: URI = abcd.vcs 
@@ -72,11 +74,12 @@ public class SimpleWebServer extends NanoHTTPD {
 	}
 
 	Response serveFile(String uri, Map<String, String> header, File homeDir) {
-		File f = new File(homeDir, uri);
+		File f = homeDir;
 		// System.out.println(homeDir+uri);
 		Response res = null;
 		if (f.exists()) {
-			// System.out.println("\n\nexists\n\n");
+			VCSLogger.infoLogToCmd("FLE EXISTS!!");
+			//System.out.println("\n\nexists\n\n");
 			try {
 				if (res == null) {
 					// Get MIME type from file name extension, if possible
