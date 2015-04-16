@@ -21,6 +21,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -31,6 +32,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Stack;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -643,6 +645,8 @@ public class Operations {
 		return retVal;
 	}
 
+	
+	
 	public VCSCommit getBranchHead(String workingDir,String branchName) throws IOException{
 		BufferedReader br = null;
 		File branch = new File(workingDir + ".vcs/branches/" + branchName);
@@ -771,6 +775,12 @@ public class Operations {
 		// TODO Auto-generated method stub
 		return 0;
 	}
+	
+	//WAIT
+	public void mergePullBranch() {
+		
+	}
+	
 	void mergeTree(VCSTree firstVCSTree,VCSTree secondVCSTree,VCSTree mergedVCSTree, VCSTree commonAncestor)
 	{
 		ArrayList<AbstractVCSTree> firstVCSTreeChildren = firstVCSTree.getImmediateChildren();
@@ -968,6 +978,9 @@ public class Operations {
 	        }
 	    }
 	}
+	
+	
+	
 /*	public boolean writeCloneConfig(String workingDir, String repoUrl) throws IOException
 	{
 		File config = new File(workingDir + Constants.VCSFOLDER + "/config");
@@ -1380,5 +1393,206 @@ public class Operations {
 		
 		return null;
 	}
+	
+	
+//#!	PUSH-PULL-PUSH OP
+
+	public VCSCommit getLocalBranchHeadwithImportAllFlag(String workingDir, String branchName) throws IOException {
+		BufferedReader br = null;
+		File branch = new File(workingDir + ".vcs/branches/" + branchName);
+		VCSCommit localHead = null;
+		String sCurrentLine;
+		if(branch.exists()){
+			br = new BufferedReader(new FileReader(workingDir + ".vcs/branches/" + branchName));
+			while ((sCurrentLine = br.readLine()) != null) 
+			{
+				localHead = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_ALL);
+			}
+			br.close();
+		}
+		
+		return localHead;
+	}
+	
+	public VCSCommit getRemoteBranchHeadwithImportAllFlag(String workingDir, String branchName, String tmpDirName) throws IOException {
+		BufferedReader br = null;
+		File branch = new File(workingDir + ".vcs/" + tmpDirName + "/.vcs/branches/" + branchName);
+		VCSCommit remoteHead = null;
+		String sCurrentLine;
+		if(branch.exists()){
+			br = new BufferedReader(new FileReader(workingDir + ".vcs/" + tmpDirName + "/.vcs/branches/" + branchName));
+			while ((sCurrentLine = br.readLine()) != null) 
+			{
+				remoteHead = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_ALL, tmpDirName);
+			}
+			br.close();
+		}
+		
+		return remoteHead;
+	}
+	
+	public VCSCommit getLCA(LinkedList<VCSCommit> localLL, LinkedList<VCSCommit> remoteLL) {
+		
+		VCSCommit LCA = null;
+		
+		int localLength = localLL.size();
+		int remoteLength = remoteLL.size();
+		int diff = 0;
+		
+		if(localLength>remoteLength) {
+			int i = 0;
+			diff = localLength-remoteLength;
+			int j = i + diff;
+			while((localLL.get(j) != null) && (remoteLL.get(i) != null )) {
+				if(localLL.get(j).equals(remoteLL.get(i))) {
+					LCA = localLL.get(j);
+				}
+				i++;
+				j++;
+			}
+		}
+		else {
+			// localListLength < remoteListLength
+			int i = 0;
+			diff = remoteLength-localLength;
+			int j = i + diff;
+			while((localLL.get(i) != null) && (remoteLL.get(j) != null )) {
+				if(localLL.get(i).equals(remoteLL.get(j))) {
+					LCA = localLL.get(i);
+				}
+				i++;
+				j++;
+			}
+		}
+		
+		if(LCA.equals(null)){
+			VCSLogger.infoLogToCmd("THE TWO BRANCHES DO NOT SHARE A COMMON ANCESTOR. HENCE, LCA: 'NULL'");
+		}
+		else {
+			VCSLogger.debugLogToCmd("NETWORK:PUSH", "LCA FOUND: " + LCA);
+		}
+		
+		return LCA;
+	}
+	
+	/**
+	 * push-pull-push
+	 * 1. CLoned
+	 * 2. Added & Commit
+	 * 3. Push :
+	 * 		a) pull
+	 * 		b) set Lock on 'S'
+	 * 		c) *merge
+	 * 		d) push changes
+	 * 		e) release lock on 'S'
+	 * @return null
+	 * @throws IOException 
+	 */
+	public String push(String remoteHandleName, String targetBranchName) throws IOException {
+		// push origin master (push 'remoteHandleName' 'targetBranchName')
+		
+		pull(remoteHandleName);
+		
+		//SETLOCK
+		
+		String userWorkDir = System.getProperty("user.dir");
+		//String userHomeDir = System.getProperty("user.home");
+		String tmpDirName = "pulltemp";
+		
+		String workingDir = userWorkDir + File.separator;	
+		
+		
+		VCSCommit localObject = getLocalBranchHeadwithImportAllFlag(workingDir, targetBranchName);
+		VCSCommit remoteObject = getRemoteBranchHeadwithImportAllFlag(workingDir, targetBranchName, tmpDirName);
+		
+		/*
+		 * Finding LCA for the two linked lists,
+		 * namely localObject and remoteObject
+		 * 
+		 * 1. Constructing a Linked List of type VCSCommit corresponding to each local and remote
+		 * 2. Add respective parents of each VCSCommit object in the linked list
+		 * 3. In case a VCSCommit object has more than one parent, select the first parent i.e. 0th positioned parent
+		 * 4. 
+		 * 
+		 */
+		
+		LinkedList<VCSCommit> localLL = new LinkedList<VCSCommit>();
+		LinkedList<VCSCommit> remoteLL = new LinkedList<VCSCommit>();
+		
+		VCSCommit localparentObj = localObject;
+		while(localparentObj!=null) {	
+			localLL.add(localparentObj);
+			localparentObj=localparentObj.getParentCommits().get(0);
+		}
+		
+		VCSCommit remoteparentObj = remoteObject;
+		while(remoteparentObj!=null) {	
+			remoteLL.add(remoteparentObj);
+			remoteparentObj=remoteparentObj.getParentCommits().get(0);
+		}
+		
+		VCSCommit LCA = getLCA(localLL, remoteLL);
+		
+		
+		/*
+		 * FOR EVERY NEW ELEMENT (VCSCommit Object) FROM REMOTE DO:
+		 * 0. FIND SUCH ELEMENTS (STACK|QUEUE)
+		 * 1. WRITE ORIGINALS TO DISK
+		 * 2. WRITE COMMIT TO DISK
+		 */
+		
+		Queue<VCSCommit> newElems = new LinkedList<VCSCommit>();
+		Stack<VCSCommit> writeElems = new Stack<VCSCommit>();
+		
+		newElems.add(remoteObject);
+		
+		while(!newElems.isEmpty()) {
+			VCSCommit item = newElems.remove();
+			writeElems.add(item);
+			
+			ArrayList<VCSCommit> itemsList = item.getParentCommits(); 
+			for(VCSCommit e : itemsList) {
+				if(!e.equals(LCA)){
+					newElems.add(e);
+				}
+			}
+		}
+		
+		ArrayList<VCSCommit> finalElements = new ArrayList<VCSCommit>();
+		while(!writeElems.empty()) {
+			finalElements.add(writeElems.pop());
+		}
+		
+		for(VCSCommit de : finalElements){
+			if(de.getTree().writeOriginalToDisk()) {
+				VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITEORIGINALSTODISKS", "NEW ELEMENTS FROM REMOTE WRITTEN SUCCESSFULLY TO DISK.");
+			}
+			else {
+				VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITEORIGINALSTODISKS", "#! NEW ELEMENTS FROM REMOTE WRITE FAILED TO DISK.");
+			}
+			if(de.writeCommitToDisk()) {
+				VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITECOMMITSTODISKS", "NEW ELEMENTS FROM REMOTE WRITTEN SUCCESSFULLY TO DISK.");
+			}
+			else {
+				VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITECOMMITSTODISKS", "#! NEW ELEMENTS FROM REMOTE WRITE FAILURE TO DISK.");
+			}
+		}
+		
+		/*
+		 * MERGE(localObject, remoteObject, LCA)
+		 */
+		VCSTree mergedVCSTree = null;
+		mergeTree(localObject.getTree(), remoteObject.getTree(), mergedVCSTree, LCA.getTree());
+
+		
+		return null;
+	}
 }
+
+
+
+
+
+
+
 
