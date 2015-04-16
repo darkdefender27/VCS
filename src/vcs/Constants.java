@@ -13,6 +13,11 @@ public class Constants {
 	public static String VCSFOLDER = ".vcs";
 	
 	/**
+	 * <code>Name</code> of the folder where <code>hooks</code> data will be stored disk.
+	 */
+	public static String PullTemp_FOLDER = "pulltemp";
+	
+	/**
 	 * <code>Name</code> of the folder where <code>branch</code> data will be stored on disk.
 	 */
 	public static String BRANCH_FOLDER="branches";

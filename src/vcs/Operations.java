@@ -17,6 +17,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,12 +25,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import com.diff.core.Diff;
 import com.diff.core.FileDiffResult;
 import com.diff.core.MergeResult;
+import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 
 import logger.VCSLogger;
 import network.ConfigManipulation;
@@ -43,6 +46,12 @@ import java.lang.System;
 
 public class Operations {
 
+	public static String getPullTempFolder(String workingDirectory) {
+		Path toCreateDirPath = Paths.get(workingDirectory + File.separator + Constants.VCSFOLDER
+				+ File.separator + Constants.PullTemp_FOLDER);
+		return toCreateDirPath.toString();
+	}
+	
 	public static String getBranchesFolder(String workingDirectory) {
 		Path toCreateDirPath = Paths.get(workingDirectory + Constants.VCSFOLDER
 				+ "/" + Constants.BRANCH_FOLDER);
@@ -932,7 +941,7 @@ public class Operations {
 	        }
 	    }
 	}
-	public boolean writeCloneConfig(String workingDir, String repoUrl) throws IOException
+/*	public boolean writeCloneConfig(String workingDir, String repoUrl) throws IOException
 	{
 		File config = new File(workingDir + Constants.VCSFOLDER + "/config");
 		boolean status;
@@ -948,7 +957,7 @@ public class Operations {
 		}
 		return status;
 	}	
-	
+	*/
 	public String clone(String repoUrl,String workDir){
 		URLConnection conn;
 		/** 
@@ -976,7 +985,7 @@ public class Operations {
 			String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
 
 			String userWorkDir = System.getProperty("user.dir");
-			String userHomeDir = System.getProperty("user.home");
+			//String userHomeDir = System.getProperty("user.home");
 			
 			//Receives Response from server (Check SimpleWebServer.java and stores in response InputStream)
 			InputStream response = conn.getInputStream();
@@ -1053,16 +1062,18 @@ public class Operations {
 			catch (IOException ioe) {
 				System.out.println("Error opening zip file: " + ioe);
 			}
-			 finally {
-				 try {
-					 if (zipFile!=null) {
-						 zipFile.close();
-					 }
-				 }
-				 catch (IOException ioe) {
-						System.out.println("Error while closing zip file" + ioe);
-				 }
-			 }
+			finally 
+			{
+				try 
+				{
+					if (zipFile!=null) {
+						zipFile.close();
+					}
+				}
+				catch (IOException ioe) {
+					System.out.println("Error while closing zip file" + ioe);
+				}
+			}
 			
 			/**
 			 * Once the directory is cloned, update the config file and add any directories not zipped (empty)
@@ -1126,4 +1137,149 @@ public class Operations {
 		}
 		return null;
 	}
+	
+	public String pull(String remoteHandleName) {
+		
+		String userWorkDir = System.getProperty("user.dir");
+		//String userHomeDir = System.getProperty("user.home");
+
+		String confPath = userWorkDir + File.separator + Constants.VCSFOLDER + "/config";
+		//File conf = new File(confPath);
+		
+		List<String> lines = null;
+		try {
+			lines = Files.readAllLines(Paths.get(confPath), Charset.defaultCharset());
+		} 
+		catch (IOException e) {
+			// TODO Auto-generated catch block
+			VCSLogger.infoLogToCmd("Config File not found: " + e);
+		}
+		
+		for (String line : lines) {
+    		if (line.contains("remote "+remoteHandleName)) {
+    			int i = lines.indexOf(line);
+    			i++;
+    			String urlLine = lines.get(i);
+    			urlLine.replaceAll("/s+", "");
+    			VCSLogger.infoLogToCmd("URL LINE: " + urlLine);
+    			String urlParts[] = urlLine.split("=");
+    			String repoUrl = urlParts[1];
+    			
+    			URLConnection conn;
+    			try {
+    				conn = new URL(repoUrl + "?REQUEST=PULL").openConnection();
+    				//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
+    				conn.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
+    				conn.setRequestProperty("Accept","*/*");
+    				VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
+    				
+    				//int status = ((HttpURLConnection) conn).getResponseCode();
+    				//VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
+    				
+    				String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
+    				String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
+
+    				InputStream response = conn.getInputStream();
+    				
+    				getPullTempFolder(userWorkDir);
+    				boolean pullTempCreated = new File(Operations.getPullTempFolder(userWorkDir)).mkdir();
+    				if(pullTempCreated) {
+    					VCSLogger.infoLogToCmd("> Creatd pulltemp directory in .vcs");
+    				}
+    				else {
+    					VCSLogger.infoLogToCmd("> Could not create pulltemp directory in .vcs");
+    				}
+    				
+    				//#!
+    				String zipFilePath = userWorkDir + File.separator + Constants.VCSFOLDER + File.separator +
+    						Constants.PullTemp_FOLDER + File.separator + ".vcs.zip";
+    				VCSLogger.infoLogToCmd("zipFilePath: " + zipFilePath);
+    				FileOutputStream outStream = new FileOutputStream(new File(zipFilePath));
+    				
+    				byte buf[] = new byte[8192];
+    				while(response.read(buf) > 0){
+    					outStream.write(buf);
+    				}
+    				outStream.close();
+    				response.close();
+    				
+    				/**
+    				 * UNZIP CODE
+    				 */
+    				String filename = userWorkDir + File.separator + Constants.VCSFOLDER + File.separator + 
+    						Constants.PullTemp_FOLDER + File.separator + ".vcs.zip";			
+    				VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + filename);
+    				
+    				File srcFile = new File(filename);
+    				
+    				// create a directory with the same name to which the contents will be extracted
+    				String zipPath = filename.substring(0, filename.length()-4);
+    				File temp = new File(zipPath);
+    				temp.mkdir();
+    				
+    				ZipFile zipFile = null;
+    				
+
+    				try {
+    					
+    					zipFile = new ZipFile(srcFile);
+    					
+    					// get an enumeration of the ZIP file entries
+    					Enumeration<?> e = zipFile.entries();
+    					
+    					while (e.hasMoreElements()) {
+    						
+    						ZipEntry entry = (ZipEntry) e.nextElement();
+    						
+    						File destinationPath = new File(zipPath, entry.getName());
+    						 
+    						//create parent directories
+    						destinationPath.getParentFile().mkdirs();
+    						
+    						// if the entry is a file extract it
+    						if (entry.isDirectory()) {
+    							continue;
+    						}
+    						else {
+    							
+    							System.out.println("Extracting file: " + destinationPath);
+    							
+    							BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
+
+    							int b;
+    							byte buffer[] = new byte[1024];
+
+    							FileOutputStream fos = new FileOutputStream(destinationPath);
+    							
+    							BufferedOutputStream bos = new BufferedOutputStream(fos, 1024);
+
+    							while ((b = bis.read(buffer, 0, 1024)) != -1) {
+    								bos.write(buffer, 0, b);
+    							}
+    							
+    							bos.close();
+    							bis.close();
+    							
+    						}
+    						
+    					}
+    					VCSLogger.infoLogToCmd("Succesful PULL operation. Check: ../.vcs/pulltemp/");
+    				}
+    				catch (IOException ioe) {
+    					System.out.println("Error opening zip file: " + ioe);
+    				}
+				} //! HTTP CONN TO PULL
+    			catch (Exception e) {
+					// TODO: handle exception
+					e.printStackTrace();
+				}
+    		}
+    	    
+    	} //~for LOOP :: line:lines<String>
+		
+		return null;
+	}
+	
+	
 }
+

@@ -58,15 +58,20 @@ public class SimpleWebServer extends NanoHTTPD {
 		if (uri.contains(".vcs")) {
 			uri = uri.substring(1, uri.length());
 			String request = parms.get("REQUEST");
-			VCSLogger.infoLogToCmd("SERVER RECV." + request);
-			//Check the ?REQUEST parameter for value: CLONE
 			if (request != null) {
+				//Check the ?REQUEST parameter for value: CLONE	
 				if (parms.get("REQUEST").equals("CLONE")) {
 					System.out.println("URI = " + uri); // Example: URI = abcd.vcs 
 					File repoRoot = ops.CloneRepository(uri); //Operation in NetworkOps
 					//File f = new File("/home/shubham/Downloads/");
 					//return serveFile("/views.py", header, f);
 					return serveFile("", header, repoRoot);
+				}
+				//Check the ?REQUEST parameter for value: PULL
+				if (parms.get("REQUEST").equals("PULL")) {
+					System.out.println("PULL CONTENTS FROM URI = " + uri); // Example: URI = abcd.vcs 
+					File pulledRepoFile = ops.PullRepository(uri); //Operation in NetworkOps
+					return serveFile("", header, pulledRepoFile);
 				}
 			}
 		}

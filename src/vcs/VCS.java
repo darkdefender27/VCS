@@ -153,7 +153,12 @@ public class VCS {
 					scanner.close(); // Scanner was not closed.
 				}
 				if (args[0].equals("clone") && argLength == 3){
+					//clone http://ip:port/repoName.vcs /home/../somePathOnLocalMachine/
 					ops.clone(args[1],args[2]);
+				}
+				if (args[0].equals("pull") && argLength == 2){
+					//pull origin i.e. "vcs pull remote_handle_name"
+					ops.pull(args[1]);
 				}
 				//~~
 			
