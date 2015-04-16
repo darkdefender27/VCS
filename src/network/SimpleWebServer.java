@@ -73,6 +73,13 @@ public class SimpleWebServer extends NanoHTTPD {
 					File pulledRepoFile = ops.PullRepository(uri); //Operation in NetworkOps
 					return serveFile("", header, pulledRepoFile);
 				}
+				//Check the ?REQUEST parameter for value: PULL
+				if (parms.get("REQUEST").equals("PUSH")) {
+					VCSLogger.infoLogToCmd("PUSH CONTENTS TO URI = " + uri); // Example: URI = abcd.vcs 
+					String authorName = parms.get("AUTHOR");
+					File pushStatus = ops.pushRepository(uri, authorName); //Operation in NetworkOps
+					return serveFile("", header, pushStatus);
+				}
 			}
 		}
 		return new NanoHTTPD.Response(msg);

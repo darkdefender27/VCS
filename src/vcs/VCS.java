@@ -161,6 +161,16 @@ public class VCS {
 					//pull origin i.e. "vcs pull remote_handle_name"
 					ops.pull(args[1]);
 				}
+				if (args[0].equals("push") && argLength == 3){
+					//push origin master i.e. "vcs push remote_handle_name target_branch_name"
+					try {
+						ops.push(args[1], args[2]);
+					} 
+					catch (IOException e) {
+						VCSLogger.debugLogToCmd("NETWORK:PUSH", "PUSH FAILED AT START: " + e);
+					}
+				}
+				
 				//~~
 			
 				if(args[0].equals("init") && argLength == 2){

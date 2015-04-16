@@ -2,7 +2,11 @@ package network;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -12,6 +16,68 @@ import logger.VCSLogger;
 
 public class NetworkOps {
 	
+	public File pushRepository(String repoName, String authorName) {
+		
+		String LOCK_STATUS = null;
+		String userWorkDir = System.getProperty("user.dir") + File.separator;
+		String fname = userWorkDir + "checkLock";
+		File f = new File(fname);
+		if(f.exists()) {
+			try {
+	    		List<String> lines = Files.readAllLines(Paths.get(fname), Charset.defaultCharset());
+	    		
+	        	for (String line : lines) {
+	        		String parts[] = line.split(" ");
+	        	    if(authorName.equals(parts[0])) {
+	        	    	LOCK_STATUS = parts[1];
+	        	    	VCSLogger.debugLogToCmd("NET:PUSH:LOCKSTATUS", "LOCK_STATUS: "+ LOCK_STATUS);
+	        	    }
+	        	}
+	        	
+	        	if(LOCK_STATUS.equals("true")) {
+	        		VCSLogger.infoLogToCmd("SERVER IS ENGAGED WITH OTHER CLIENT. \nPlease WAIT" +
+	        				" before the client RELEASES the LOCK");
+	        	}
+	        	else if (LOCK_STATUS.equals("false")){
+	        		VCSLogger.infoLogToCmd("LOCK CAN BE SET. SERVER IS IDLE. FOLLOW PUSH-PULL-PUSH MODEL.");
+					try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(f, false)))) {
+					    out.println(authorName + " true");
+					}
+					catch (IOException e) {
+						VCSLogger.errorLogToCmd("FILEEXCEPTION:NETPUSH", "Data write LOCkCHECK failed!");
+					}
+
+	        	}
+			} 
+	    	catch (Exception e) {
+	    		VCSLogger.errorLogToCmd("NET:PUSH:FILEEXCEPTION", "Exception in reading File: " + e);
+			}
+			
+		}
+		//CREATE A NEW CHECK LOCK FILE. AND SET THE LOCK VALUE: "TRUE" I.E. LOCKED
+		else {
+			try {
+				if(f.createNewFile())
+				{
+					VCSLogger.infoLogToCmd("checkLock File created in workDirectory: " + userWorkDir);
+				}
+				
+//#!#!#!#! IMP > LOCK SET TO TRUE INITIALLY
+				
+				try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(f, false)))) {
+				    out.println(authorName + " true");
+				}
+				catch (IOException e) {
+					VCSLogger.infoLogToCmd("Data write to repoListHolder failed!");
+				}
+			} 
+			catch (IOException e) {
+				VCSLogger.errorLogToCmd("FILE CREATION", "CHECK Lock FILE could not be created.");
+			}
+		}
+		
+		return f;
+	}
 	
     public File CloneRepository(String repoName) {
     	// repoName = abcd.vcs

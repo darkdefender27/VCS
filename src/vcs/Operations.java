@@ -1372,10 +1372,8 @@ public class Operations {
     							}
     							
     							bos.close();
-    							bis.close();
-    							
+    							bis.close();	
     						}
-    						
     					}
     					VCSLogger.infoLogToCmd("Succesful PULL operation. Check: ../.vcs/pulltemp/");
     				}
@@ -1491,99 +1489,228 @@ public class Operations {
 	public String push(String remoteHandleName, String targetBranchName) throws IOException {
 		// push origin master (push 'remoteHandleName' 'targetBranchName')
 		
-		pull(remoteHandleName);
-		
-		//SETLOCK
-		
+		/*
+		 * PUSH=PULL=PUSH FORMAT
+		 */
 		String userWorkDir = System.getProperty("user.dir");
 		//String userHomeDir = System.getProperty("user.home");
 		String tmpDirName = "pulltemp";
+		String workingDir = userWorkDir + File.separator;
+		String confPath = userWorkDir + File.separator + Constants.VCSFOLDER + "/config";
 		
-		String workingDir = userWorkDir + File.separator;	
-		
-		
-		VCSCommit localObject = getLocalBranchHeadwithImportAllFlag(workingDir, targetBranchName);
-		VCSCommit remoteObject = getRemoteBranchHeadwithImportAllFlag(workingDir, targetBranchName, tmpDirName);
-		
-		/*
-		 * Finding LCA for the two linked lists,
-		 * namely localObject and remoteObject
-		 * 
-		 * 1. Constructing a Linked List of type VCSCommit corresponding to each local and remote
-		 * 2. Add respective parents of each VCSCommit object in the linked list
-		 * 3. In case a VCSCommit object has more than one parent, select the first parent i.e. 0th positioned parent
-		 * 4. 
-		 * 
-		 */
-		
-		LinkedList<VCSCommit> localLL = new LinkedList<VCSCommit>();
-		LinkedList<VCSCommit> remoteLL = new LinkedList<VCSCommit>();
-		
-		VCSCommit localparentObj = localObject;
-		while(localparentObj!=null) {	
-			localLL.add(localparentObj);
-			localparentObj=localparentObj.getParentCommits().get(0);
+		List<String> lines = null;
+		try {
+			lines = Files.readAllLines(Paths.get(confPath), Charset.defaultCharset());
+		} 
+		catch (IOException e) {
+			// TODO Auto-generated catch block
+			VCSLogger.infoLogToCmd("Config File not found: " + e);
 		}
 		
-		VCSCommit remoteparentObj = remoteObject;
-		while(remoteparentObj!=null) {	
-			remoteLL.add(remoteparentObj);
-			remoteparentObj=remoteparentObj.getParentCommits().get(0);
+		String repoUrl = null;
+		for (String line : lines) {
+    		if (line.contains("remote "+remoteHandleName)) {
+    			int i = lines.indexOf(line);
+    			i++;
+    			String urlLine = lines.get(i);
+    			urlLine.replaceAll("/s+", "");
+    			VCSLogger.infoLogToCmd("URL LINE: " + urlLine);
+    			String urlParts[] = urlLine.split("=");
+    			
+    			repoUrl = urlParts[1];
+    		}
 		}
 		
-		VCSCommit LCA = getLCA(localLL, remoteLL);
+		if(repoUrl.equals(null)) {
+			VCSLogger.debugLogToCmd("PUSH:REPOURL:CONFIG", "FAILED TO OBTAIN repoUrl from .config");
+		}
+		else {
+			VCSLogger.debugLogToCmd("PUSH:REPOURL:CONFIG", "REPO_URL: " + repoUrl);
+		}
 		
+		URLConnection conn1;
 		
-		/*
-		 * FOR EVERY NEW ELEMENT (VCSCommit Object) FROM REMOTE DO:
-		 * 0. FIND SUCH ELEMENTS (STACK|QUEUE)
-		 * 1. WRITE ORIGINALS TO DISK
-		 * 2. WRITE COMMIT TO DISK
-		 */
+//#!#!#!!#!# 	AUTHOR NAME ?? TEMP: "darkDefender"
 		
-		Queue<VCSCommit> newElems = new LinkedList<VCSCommit>();
-		Stack<VCSCommit> writeElems = new Stack<VCSCommit>();
-		
-		newElems.add(remoteObject);
-		
-		while(!newElems.isEmpty()) {
-			VCSCommit item = newElems.remove();
-			writeElems.add(item);
+		String author = "darkDefender";
+		String LOCK_RESPONSE = "HALT";
+		try {
+			conn1 = new URL(repoUrl + "?REQUEST=PUSH"+"?AUTHOR="+author).openConnection();
+			//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
+			conn1.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
+			conn1.setRequestProperty("Accept","*/*");
+			VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
 			
-			ArrayList<VCSCommit> itemsList = item.getParentCommits(); 
-			for(VCSCommit e : itemsList) {
-				if(!e.equals(LCA)){
-					newElems.add(e);
+			//String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
+			//String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
+
+			InputStream response = conn1.getInputStream();
+			
+			FileOutputStream outStream = new FileOutputStream(new File(workingDir + "checkLockResponse"));
+			
+			byte buf[] = new byte[8192];
+			while(response.read(buf) > 0){
+				outStream.write(buf);
+			}
+			outStream.close();
+			response.close();
+			
+//#!#!#! 	CHECK LOCK RESPONSE
+			
+			
+			String LOCK_ST = null;
+			String fName = workingDir + "checkLockResponse";
+			List<String> filelines = Files.readAllLines(Paths.get(fName), Charset.defaultCharset());
+    		
+        	for (String line : filelines) {
+        		String parts[] = line.split(" ");
+        	    if(author.equals(parts[0])) {
+        	    	LOCK_ST = parts[1];
+        	    	if(LOCK_ST.equals("true")) {
+        	    		LOCK_RESPONSE = "PROCEED";
+        	    	}
+        	    }
+        	}
+			
+			//int status = ((HttpURLConnection) conn1).getResponseCode();
+			//VCSLogger.infoLogToCmd("CONN COMPLETE -- HTTP STATUS RECEIVED: " + status);
+		}
+		catch(Exception e) {
+			VCSLogger.debugLogToCmd("PUSH:HTTPCONN1", "ERRORCONN1: FAILED TO CONNECT TO SERVER.");
+		}
+		
+		/*
+		 * LOCK == PROCEED
+		 * PULL remoteHandleName
+		 * AND PROCEED...
+		 */
+		
+//#!#!#!	PROCEEDED...
+		
+		if(LOCK_RESPONSE.equals("PROCEED")) {
+			
+			pull(remoteHandleName);
+			
+			VCSCommit localObject = getLocalBranchHeadwithImportAllFlag(workingDir, targetBranchName);
+			VCSCommit remoteObject = getRemoteBranchHeadwithImportAllFlag(workingDir, targetBranchName, tmpDirName);
+			
+			/*
+			 * Finding LCA for the two linked lists,
+			 * namely localObject and remoteObject
+			 * 
+			 * 1. Constructing a Linked List of type VCSCommit corresponding to each local and remote
+			 * 2. Add respective parents of each VCSCommit object in the linked list
+			 * 3. In case a VCSCommit object has more than one parent, select the first parent i.e. 0th positioned parent
+			 * 4. 
+			 * 
+			 */
+			
+			LinkedList<VCSCommit> localLL = new LinkedList<VCSCommit>();
+			LinkedList<VCSCommit> remoteLL = new LinkedList<VCSCommit>();
+			
+			VCSCommit localparentObj = localObject;
+			while(localparentObj!=null) {	
+				localLL.add(localparentObj);
+				localparentObj=localparentObj.getParentCommits().get(0);
+			}
+			
+			VCSCommit remoteparentObj = remoteObject;
+			while(remoteparentObj!=null) {	
+				remoteLL.add(remoteparentObj);
+				remoteparentObj=remoteparentObj.getParentCommits().get(0);
+			}
+			
+			VCSCommit LCA = getLCA(localLL, remoteLL);
+			
+			
+			/*
+			 * FOR EVERY NEW ELEMENT (VCSCommit Object) FROM REMOTE DO:
+			 * 0. FIND SUCH ELEMENTS (STACK|QUEUE)
+			 * 1. WRITE ORIGINALS TO DISK
+			 * 2. WRITE COMMIT TO DISK
+			 */
+			
+			Queue<VCSCommit> newElems = new LinkedList<VCSCommit>();
+			Stack<VCSCommit> writeElems = new Stack<VCSCommit>();
+			
+			newElems.add(remoteObject);
+			
+			while(!newElems.isEmpty()) {
+				VCSCommit item = newElems.remove();
+				writeElems.add(item);
+				
+				ArrayList<VCSCommit> itemsList = item.getParentCommits(); 
+				for(VCSCommit e : itemsList) {
+					if(!e.equals(LCA)){
+						newElems.add(e);
+					}
 				}
 			}
-		}
-		
-		ArrayList<VCSCommit> finalElements = new ArrayList<VCSCommit>();
-		while(!writeElems.empty()) {
-			finalElements.add(writeElems.pop());
-		}
-		
-		for(VCSCommit de : finalElements){
-			if(de.getTree().writeOriginalToDisk()) {
-				VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITEORIGINALSTODISKS", "NEW ELEMENTS FROM REMOTE WRITTEN SUCCESSFULLY TO DISK.");
+			
+			ArrayList<VCSCommit> finalElements = new ArrayList<VCSCommit>();
+			while(!writeElems.empty()) {
+				finalElements.add(writeElems.pop());
 			}
-			else {
-				VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITEORIGINALSTODISKS", "#! NEW ELEMENTS FROM REMOTE WRITE FAILED TO DISK.");
+			
+			for(VCSCommit de : finalElements){
+				if(de.getTree().writeOriginalToDisk()) {
+					VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITEORIGINALSTODISKS", "NEW ELEMENTS FROM REMOTE WRITTEN SUCCESSFULLY TO DISK.");
+				}
+				else {
+					VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITEORIGINALSTODISKS", "#! NEW ELEMENTS FROM REMOTE WRITE FAILED TO DISK.");
+				}
+				if(de.writeCommitToDisk()) {
+					VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITECOMMITSTODISKS", "NEW ELEMENTS FROM REMOTE WRITTEN SUCCESSFULLY TO DISK.");
+				}
+				else {
+					VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITECOMMITSTODISKS", "#! NEW ELEMENTS FROM REMOTE WRITE FAILURE TO DISK.");
+				}
 			}
-			if(de.writeCommitToDisk()) {
-				VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITECOMMITSTODISKS", "NEW ELEMENTS FROM REMOTE WRITTEN SUCCESSFULLY TO DISK.");
-			}
-			else {
-				VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITECOMMITSTODISKS", "#! NEW ELEMENTS FROM REMOTE WRITE FAILURE TO DISK.");
-			}
-		}
-		
-		/*
-		 * MERGE(localObject, remoteObject, LCA)
-		 */
-		VCSTree mergedVCSTree = null;
-		mergeTree(localObject.getTree(), remoteObject.getTree(), mergedVCSTree, LCA.getTree());
+			
+			/*
+			 * MERGE(localObject, remoteObject, LCA)
+			 */
+			VCSTree mergedVCSTree = null;
+			mergeTree(localObject.getTree(), remoteObject.getTree(), mergedVCSTree, LCA.getTree());
+			
+			/*
+			 * UPDATE INFORMATION OBTAINED AFTER MERGE
+			 * 1. DEVELOPER LIST
+			 * 2. CURRENT BRANCH HEAD
+			 * 3. HEAD
+			 */
+			
+			
+			/*
+			 * PUSH FINAL CHANGES TO SERVER
+			 */
+			
+			URLConnection conn2;
+			
+		//#!#!#!#!#!#!#! 	SEND DATA TO THE SERVER: NANO?
+			
+			try {
+				conn2 = new URL(repoUrl + "?REQUEST=PUSH").openConnection();
+				//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
+				conn2.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
+				conn2.setRequestProperty("Accept","*/*");
+				VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
+				
+				//String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
+				//String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
 
+				//InputStream response = conn.getInputStream();
+				int status = ((HttpURLConnection) conn2).getResponseCode();
+				VCSLogger.infoLogToCmd("CONN COMPLETE -- HTTP STATUS RECEIVED: " + status);
+			}
+			catch(Exception e) {
+				VCSLogger.debugLogToCmd("PUSH:HTTPCONN", "FAILED TO CONNECT TO SERVER.");
+			}
+		}//~LOCK_RESPONSE == PROCEED
+		else {
+			VCSLogger.infoLogToCmd("A LOCK EXISTS ON THE REMOTE LOCATION. PLEASE WAIT...");
+		}
+		
 		
 		return null;
 	}
