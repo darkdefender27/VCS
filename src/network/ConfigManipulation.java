@@ -34,10 +34,11 @@ public class ConfigManipulation {
 	public void writeCloneConfig(String repoRemoteUrl) {
 		//Code to write to config file on Clone.
 		try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(this.config, true)))) {
-		    out.println("[remote origin]\n\turl="+repoRemoteUrl); 
+		    out.println("[remote origin]\n\turl="+repoRemoteUrl);
+		    VCSLogger.infoLogToCmd("SUCCESSFUL WRITE TO CONFIG FILE>");
 		}
 		catch (IOException e) {
-			VCSLogger.infoLogToCmd("Data write InitConfig failed!");
+			VCSLogger.infoLogToCmd("Data write Clone Config failed!: " + e);
 		}
 	}
 	

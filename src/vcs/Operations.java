@@ -32,6 +32,7 @@ import com.diff.core.FileDiffResult;
 import com.diff.core.MergeResult;
 
 import logger.VCSLogger;
+import network.ConfigManipulation;
 import objects.AbstractVCSTree;
 import objects.VCSBlob;
 import objects.VCSCommit;
@@ -112,6 +113,7 @@ public class Operations {
 			}
 			else
 			{
+				//CREATE or UPDATE repoListHolder
 				String repoName = null;
 				String sample = vcsPath.toString();
 				if(sample.contains("\\"))
@@ -158,7 +160,7 @@ public class Operations {
 					VCSLogger.infoLogToCmd("Error in creating the File repoListHolder: " + e);
 				} 
 				
-				
+				//CREATE .VCS FOLDER
 				boolean vcsFolderCreated=new File(vcsPath.toString()).mkdir();
 				if(vcsFolderCreated)
 				{
@@ -1061,6 +1063,57 @@ public class Operations {
 						System.out.println("Error while closing zip file" + ioe);
 				 }
 			 }
+			
+			/**
+			 * Once the directory is cloned, update the config file and add any directories not zipped (empty)
+			 * i.e. create the dirs. in .vcs folder
+			 */
+			
+			String confPath = userWorkDir + File.separator + fileNameWithoutExtn + File.separator
+					+ Constants.VCSFOLDER + "/config";
+			ConfigManipulation cmClone = new ConfigManipulation(confPath);
+			cmClone.writeCloneConfig(repoUrl);
+			
+			/*getBranchesFolder(workingDirectory);
+			boolean branchesFolderCreated = new File(
+					Operations.getBranchesFolder(workingDirectory))
+					.mkdir();
+
+			getHooksFolder(workingDirectory);
+			boolean hooksFolderCreated = new File(
+					Operations.getHooksFolder(workingDirectory))
+					.mkdir();
+
+			getInfoFolder(workingDirectory);
+			boolean infoFolderCreated = new File(
+					Operations.getInfoFolder(workingDirectory)).mkdir();
+
+			getLogsFolder(workingDirectory);
+			boolean logsFolderCreated = new File(
+					Operations.getLogsFolder(workingDirectory)).mkdir();
+
+			getObjectsFolder(workingDirectory);
+			boolean objectsFolderCreated = new File(
+					Operations.getObjectsFolder(workingDirectory))
+					.mkdir();
+
+			getRefsFolder(workingDirectory);
+			boolean refsFolderCreated = new File(
+					Operations.getRefsFolder(workingDirectory)).mkdir();
+
+			getHeadsFolder(workingDirectory);
+			boolean headsFolderCreated = new File(
+					Operations.getHeadsFolder(workingDirectory))
+					.mkdir();
+
+			getTagsFolder(workingDirectory);
+			boolean tagsFolderCreated=new File(Operations.getTagsFolder(workingDirectory)).mkdir();
+			
+			if(branchesFolderCreated && hooksFolderCreated && infoFolderCreated && logsFolderCreated && objectsFolderCreated && refsFolderCreated && headsFolderCreated && tagsFolderCreated && configCreated)
+			{
+				VCSLogger.infoLogToCmd("Repository successfully cloned in " + userWorkDir);
+			}
+*/			
 			
 		} // ~UNZIP CODE 
 		
