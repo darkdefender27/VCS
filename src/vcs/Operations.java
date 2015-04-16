@@ -21,9 +21,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -37,6 +43,12 @@ import objects.VCSBlob;
 import objects.VCSCommit;
 import objects.VCSTree;
 import vcs.Constants;
+
+
+
+
+
+
 //import network.HashUtil;
 import java.lang.System;
 
@@ -538,7 +550,7 @@ public class Operations {
 			if(temp!=null)
 			{
 				head=temp.getObjectHash();
-				System.out.println("head =" +head);
+				VCSLogger.debugLogToCmd("Operations#getCurrentBranch","head =" +head);
 			}
 			else
 			{
@@ -631,6 +643,22 @@ public class Operations {
 			while ((sCurrentLine = br.readLine()) != null) 
 			{
 				parent = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_TREE);
+			}
+			br.close();
+		}
+		return parent;
+	}
+	
+	public VCSCommit getBranchHeadWithImportCommitsFlag(String workingDir,String branchName) throws IOException{
+		BufferedReader br = null;
+		File branch = new File(workingDir + ".vcs/branches/" + branchName);
+		VCSCommit parent = null;
+		String sCurrentLine;
+		if(branch.exists()){
+			br = new BufferedReader(new FileReader(workingDir + ".vcs/branches/" + branchName));
+			while ((sCurrentLine = br.readLine()) != null) 
+			{
+				parent = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_COMMITS);
 			}
 			br.close();
 		}
@@ -1067,5 +1095,78 @@ public class Operations {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	/**
+	 * read commit tree, starting with current branch and returns a flattened and sorted arraylist based on timestamps
+	 * @param workingDir
+	 * @return
+	 */
+	public List<VCSCommit> readAndFlattenCommitTreeToList(String workingDir){
+		List<VCSCommit> flattenedCommitTree = new ArrayList<VCSCommit>();
+		Queue<VCSCommit> q=new LinkedList<VCSCommit>();
+		String currentBranch = getCurrentBranchName(workingDir);
+		try {
+			VCSCommit branchHead = getBranchHeadWithImportCommitsFlag(workingDir, currentBranch);
+			//not on any branch, so unconditional return
+			if(branchHead == null) return null;
+			q.add(branchHead);
+			
+			VCSCommit qElement = null;
+			ArrayList<VCSCommit> qElementAncestors = null;
+			while(!q.isEmpty()){
+				qElement = q.remove();
+				flattenedCommitTree.add(qElement);
+				qElementAncestors = qElement.getParentCommits();
+				for(VCSCommit commit : qElementAncestors){
+					q.add(commit);
+				}
+			}
+			
+			Collections.sort(flattenedCommitTree, new Comparator<VCSCommit>() {
+
+				@Override
+				public int compare(VCSCommit o1, VCSCommit o2) {
+					return (o1.getCommitTimestamp() < o2.getCommitTimestamp()) ? -1 : 1;
+				}
+			});
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return flattenedCommitTree;
+	}
+	
+	public void vcsCommitLog(String workingDir){
+		List<VCSCommit> commitList = readAndFlattenCommitTreeToList(workingDir);
+		StringBuilder builder = new StringBuilder();
+		for(VCSCommit commit : commitList){
+			//commit hash
+			builder.append("Commit ");
+			builder.append(commit.getObjectHash());
+			builder.append("\n\t");
+			//\t author
+			builder.append("Author: ");
+			builder.append(commit.getAuthor());
+			
+			builder.append("\n\t");
+			//\tmeasssage
+			builder.append("Message: ");
+			builder.append(commit.getCommitMessage());
+			builder.append("\n\t");
+			
+			//\t timestamp
+			Date commitDate = new Date(commit.getCommitTimestamp());
+			builder.append(commitDate);
+			builder.append("\n\t");
+			
+			//\tbranch
+			builder.append("Branch: ");
+			builder.append(commit.getBranchName());
+			builder.append("\n\t");
+			
+			builder.append("\n");
+		}
+		
+		VCSLogger.infoLogToCmd(builder.toString());
 	}
 }

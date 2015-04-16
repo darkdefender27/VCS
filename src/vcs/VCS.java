@@ -122,8 +122,6 @@ public class VCS {
 		String userName=null;
 		//place your cmdArgs here if required
 		
-		
-		
 		//end of cmdArgs
 		
 		args = cmdArgs.split(" ");
@@ -347,6 +345,9 @@ public class VCS {
 						System.out.println("Branch merged successfully");
 					}
 					
+				}if(args[0].equals("log") && argLength == 2){
+					//log workdir
+					ops.vcsCommitLog(args[1]);
 				}
 			}
 		}
