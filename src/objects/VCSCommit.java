@@ -87,6 +87,12 @@ public class VCSCommit extends VCSObject
 	 */
 	public static final int IMPORT_JUST_COMMIT = 2;
 	
+	/**
+	 * Pass in constructor {@link VCSCommit#VCSCommit(String, String, int)}
+	 * Tells constructor to import both parent commits and tree
+	 */
+	public static final int IMPORT_ALL = 3;
+	
 	private int importFlag = IMPORT_TREE;
 	
 	private ArrayList<VCSCommit> parents = new ArrayList<>();
@@ -234,13 +240,14 @@ public class VCSCommit extends VCSObject
 				String parentCommit = null;
 				if(commitFeatures.length != 1){
 					parentCommit = commitFeatures[1];
-					if(importFlag == IMPORT_COMMITS){
+					int flag = importFlag;
+					if(importFlag == IMPORT_COMMITS || importFlag == IMPORT_ALL){
 						if(!this.readFromTempDir){
 							this.parents.add(
-								new VCSCommit(parentCommit, workingDirectory,IMPORT_COMMITS));
+								new VCSCommit(parentCommit, workingDirectory,flag));
 						}else{
 							this.parents.add(
-									new VCSCommit(parentCommit, workingDirectory,IMPORT_COMMITS,readOpSourceTempDirName));
+									new VCSCommit(parentCommit, workingDirectory,flag,readOpSourceTempDirName));
 						}
 					}
 				}
@@ -254,7 +261,7 @@ public class VCSCommit extends VCSObject
 			this.noOfLinesDeleted=Integer.parseInt(commitItemsInString[numberOfParents + 6].split(SEPARATOR)[0]);
 			this.commitTimestamp=Long.parseLong(commitItemsInString[numberOfParents + 7].split(SEPARATOR)[0]);
 			this.branchName=commitItemsInString[numberOfParents+8].split(SEPARATOR)[0];
-			if(importFlag == IMPORT_TREE){
+			if(importFlag == IMPORT_TREE || importFlag == IMPORT_ALL){
 				if(!this.readFromTempDir){
 					this.tree =new VCSTree(tree, workingDirectory,workingDirectory + treeRelativePath,treeName);
 				}else{
