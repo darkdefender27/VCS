@@ -16,9 +16,7 @@ public class ZipDirectory {
 		File directoryToZip = new File("/home/shubham/oshin");
 
 		List<File> fileList = new ArrayList<File>();
-		System.out.println("---Getting references to all files in: " + directoryToZip.getCanonicalPath());
 		getAllFiles(directoryToZip, fileList);
-		System.out.println("---Creating zip file");
 		writeZipFile(directoryToZip, fileList);
 		System.out.println("---Done");
 	}

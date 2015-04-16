@@ -17,6 +17,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,8 +37,10 @@ import java.util.zip.ZipFile;
 import com.diff.core.Diff;
 import com.diff.core.FileDiffResult;
 import com.diff.core.MergeResult;
+import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 
 import logger.VCSLogger;
+import network.ConfigManipulation;
 import objects.AbstractVCSTree;
 import objects.VCSBlob;
 import objects.VCSCommit;
@@ -54,6 +57,12 @@ import java.lang.System;
 
 public class Operations {
 
+	public static String getPullTempFolder(String workingDirectory) {
+		Path toCreateDirPath = Paths.get(workingDirectory + File.separator + Constants.VCSFOLDER
+				+ File.separator + Constants.PullTemp_FOLDER);
+		return toCreateDirPath.toString();
+	}
+	
 	public static String getBranchesFolder(String workingDirectory) {
 		Path toCreateDirPath = Paths.get(workingDirectory + Constants.VCSFOLDER
 				+ "/" + Constants.BRANCH_FOLDER);
@@ -124,6 +133,7 @@ public class Operations {
 			}
 			else
 			{
+				//CREATE or UPDATE repoListHolder
 				String repoName = null;
 				String sample = vcsPath.toString();
 				if(sample.contains("\\"))
@@ -170,7 +180,7 @@ public class Operations {
 					VCSLogger.infoLogToCmd("Error in creating the File repoListHolder: " + e);
 				} 
 				
-				
+				//CREATE .VCS FOLDER
 				boolean vcsFolderCreated=new File(vcsPath.toString()).mkdir();
 				if(vcsFolderCreated)
 				{
@@ -958,7 +968,7 @@ public class Operations {
 	        }
 	    }
 	}
-	public boolean writeCloneConfig(String workingDir, String repoUrl) throws IOException
+/*	public boolean writeCloneConfig(String workingDir, String repoUrl) throws IOException
 	{
 		File config = new File(workingDir + Constants.VCSFOLDER + "/config");
 		boolean status;
@@ -974,47 +984,52 @@ public class Operations {
 		}
 		return status;
 	}	
-	
+	*/
 	public String clone(String repoUrl,String workDir){
 		URLConnection conn;
+		/** 
+		 * NanoHttpd serve() is automatically called 
+		 * and the response is stored in the InputStream variable response.
+		 * 
+		 * 1.) Now Unzip the .zip file received from the server and  
+		 * generate a local directory for the same with an updated config file. and extra updates (?Check)
+		 * 2.) On success, we add the remote repoUrl in config file with handle `origin`
+		 * config:
+		 * [remote 'origin'] url = repoUrl or http://127.0.0.1:8080/VCSD_1_1.vcs
+		 */
+
 		try {
 			conn = new URL(repoUrl + "?REQUEST=CLONE").openConnection();
 			//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
 			conn.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
 			conn.setRequestProperty("Accept","*/*");
+			VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
 			
-			int status = ((HttpURLConnection) conn).getResponseCode();
-			
-			VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
-			
-			/** 
-			 * NanoHttpd serve() is automatically called 
-			 * and the response is stored in the InputStream variable response.
-			 * 
-			 * 1.) Now Unzip the .zip file received from the server and  
-			 * generate a local directory for the same with an updated config file. and extra updates (?Check)
-			 * 2.) On success, we add the remote repoUrl in config file with handle `origin`
-			 * config:
-			 * [remote 'origin'] url = repoUrl or http://127.0.0.1:8080/VCSD_1_1.vcs
-			 */
-			/*
-			boolean writeStatus = writeCloneConfig(workDir, repoUrl);
-			if(writeStatus){
-				VCSLogger.infoLogToCmd("CONFIG WRITE SUCCESS.");
-			}
-			else {
-				VCSLogger.infoLogToCmd("CONFIG WRITE FAILURE.");
-			}
-			*/
-			
-			// ~UNZIP CODE
+			//int status = ((HttpURLConnection) conn).getResponseCode();
+			//VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
 			
 			String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
 			String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
 
 			String userWorkDir = System.getProperty("user.dir");
-			String filename = userWorkDir + "/" + fileNameWithoutExtn + ".zip";
+			//String userHomeDir = System.getProperty("user.home");
 			
+			//Receives Response from server (Check SimpleWebServer.java and stores in response InputStream)
+			InputStream response = conn.getInputStream();
+		
+			// Code to see the content received from the server side.
+			//New file created from the received response.
+			FileOutputStream outStream = new FileOutputStream(new File(userWorkDir + File.separator + fileNameWithoutExtn + ".zip"));
+			
+			byte buf[] = new byte[8192];
+			while(response.read(buf) > 0){
+				outStream.write(buf);
+			}
+			outStream.close();
+			response.close();
+			
+			// ~UNZIP CODE
+			String filename = userWorkDir + File.separator + fileNameWithoutExtn + ".zip";			
 			VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + filename);
 			
 			File srcFile = new File(filename);
@@ -1072,18 +1087,71 @@ public class Operations {
 				
 			}
 			catch (IOException ioe) {
-				System.out.println("Error opening zip file" + ioe);
+				System.out.println("Error opening zip file: " + ioe);
 			}
-			 finally {
-				 try {
-					 if (zipFile!=null) {
-						 zipFile.close();
-					 }
-				 }
-				 catch (IOException ioe) {
-						System.out.println("Error while closing zip file" + ioe);
-				 }
-			 }
+			finally 
+			{
+				try 
+				{
+					if (zipFile!=null) {
+						zipFile.close();
+					}
+				}
+				catch (IOException ioe) {
+					System.out.println("Error while closing zip file" + ioe);
+				}
+			}
+			
+			/**
+			 * Once the directory is cloned, update the config file and add any directories not zipped (empty)
+			 * i.e. create the dirs. in .vcs folder
+			 */
+			
+			String confPath = userWorkDir + File.separator + fileNameWithoutExtn + File.separator
+					+ Constants.VCSFOLDER + "/config";
+			ConfigManipulation cmClone = new ConfigManipulation(confPath);
+			cmClone.writeCloneConfig(repoUrl);
+			
+			/*getBranchesFolder(workingDirectory);
+			boolean branchesFolderCreated = new File(
+					Operations.getBranchesFolder(workingDirectory))
+					.mkdir();
+
+			getHooksFolder(workingDirectory);
+			boolean hooksFolderCreated = new File(
+					Operations.getHooksFolder(workingDirectory))
+					.mkdir();
+
+			getInfoFolder(workingDirectory);
+			boolean infoFolderCreated = new File(
+					Operations.getInfoFolder(workingDirectory)).mkdir();
+
+			getLogsFolder(workingDirectory);
+			boolean logsFolderCreated = new File(
+					Operations.getLogsFolder(workingDirectory)).mkdir();
+
+			getObjectsFolder(workingDirectory);
+			boolean objectsFolderCreated = new File(
+					Operations.getObjectsFolder(workingDirectory))
+					.mkdir();
+
+			getRefsFolder(workingDirectory);
+			boolean refsFolderCreated = new File(
+					Operations.getRefsFolder(workingDirectory)).mkdir();
+
+			getHeadsFolder(workingDirectory);
+			boolean headsFolderCreated = new File(
+					Operations.getHeadsFolder(workingDirectory))
+					.mkdir();
+
+			getTagsFolder(workingDirectory);
+			boolean tagsFolderCreated=new File(Operations.getTagsFolder(workingDirectory)).mkdir();
+			
+			if(branchesFolderCreated && hooksFolderCreated && infoFolderCreated && logsFolderCreated && objectsFolderCreated && refsFolderCreated && headsFolderCreated && tagsFolderCreated && configCreated)
+			{
+				VCSLogger.infoLogToCmd("Repository successfully cloned in " + userWorkDir);
+			}
+*/			
 			
 		} // ~UNZIP CODE 
 		
@@ -1096,6 +1164,7 @@ public class Operations {
 		}
 		return null;
 	}
+	
 	
 	/**
 	 * read commit tree, starting with current branch and returns a flattened and sorted arraylist based on timestamps
@@ -1127,7 +1196,7 @@ public class Operations {
 
 				@Override
 				public int compare(VCSCommit o1, VCSCommit o2) {
-					return (o1.getCommitTimestamp() < o2.getCommitTimestamp()) ? -1 : 1;
+					return (o1.getCommitTimestamp() < o2.getCommitTimestamp()) ? 1 : -1;
 				}
 			});
 		} catch (IOException e) {
@@ -1169,4 +1238,147 @@ public class Operations {
 		
 		VCSLogger.infoLogToCmd(builder.toString());
 	}
+	
+	public String pull(String remoteHandleName) {
+		
+		String userWorkDir = System.getProperty("user.dir");
+		//String userHomeDir = System.getProperty("user.home");
+
+		String confPath = userWorkDir + File.separator + Constants.VCSFOLDER + "/config";
+		//File conf = new File(confPath);
+		
+		List<String> lines = null;
+		try {
+			lines = Files.readAllLines(Paths.get(confPath), Charset.defaultCharset());
+		} 
+		catch (IOException e) {
+			// TODO Auto-generated catch block
+			VCSLogger.infoLogToCmd("Config File not found: " + e);
+		}
+		
+		for (String line : lines) {
+    		if (line.contains("remote "+remoteHandleName)) {
+    			int i = lines.indexOf(line);
+    			i++;
+    			String urlLine = lines.get(i);
+    			urlLine.replaceAll("/s+", "");
+    			VCSLogger.infoLogToCmd("URL LINE: " + urlLine);
+    			String urlParts[] = urlLine.split("=");
+    			String repoUrl = urlParts[1];
+    			
+    			URLConnection conn;
+    			try {
+    				conn = new URL(repoUrl + "?REQUEST=PULL").openConnection();
+    				//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
+    				conn.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
+    				conn.setRequestProperty("Accept","*/*");
+    				VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
+    				
+    				//int status = ((HttpURLConnection) conn).getResponseCode();
+    				//VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
+    				
+    				String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
+    				String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
+
+    				InputStream response = conn.getInputStream();
+    				
+    				getPullTempFolder(userWorkDir);
+    				boolean pullTempCreated = new File(Operations.getPullTempFolder(userWorkDir)).mkdir();
+    				if(pullTempCreated) {
+    					VCSLogger.infoLogToCmd("> Creatd pulltemp directory in .vcs");
+    				}
+    				else {
+    					VCSLogger.infoLogToCmd("> Could not create pulltemp directory in .vcs");
+    				}
+    				
+    				//#!
+    				String zipFilePath = userWorkDir + File.separator + Constants.VCSFOLDER + File.separator +
+    						Constants.PullTemp_FOLDER + File.separator + ".vcs.zip";
+    				VCSLogger.infoLogToCmd("zipFilePath: " + zipFilePath);
+    				FileOutputStream outStream = new FileOutputStream(new File(zipFilePath));
+    				
+    				byte buf[] = new byte[8192];
+    				while(response.read(buf) > 0){
+    					outStream.write(buf);
+    				}
+    				outStream.close();
+    				response.close();
+    				
+    				/**
+    				 * UNZIP CODE
+    				 */
+    				String filename = userWorkDir + File.separator + Constants.VCSFOLDER + File.separator + 
+    						Constants.PullTemp_FOLDER + File.separator + ".vcs.zip";			
+    				VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + filename);
+    				
+    				File srcFile = new File(filename);
+    				
+    				// create a directory with the same name to which the contents will be extracted
+    				String zipPath = filename.substring(0, filename.length()-4);
+    				File temp = new File(zipPath);
+    				temp.mkdir();
+    				
+    				ZipFile zipFile = null;
+    				
+
+    				try {
+    					
+    					zipFile = new ZipFile(srcFile);
+    					
+    					// get an enumeration of the ZIP file entries
+    					Enumeration<?> e = zipFile.entries();
+    					
+    					while (e.hasMoreElements()) {
+    						
+    						ZipEntry entry = (ZipEntry) e.nextElement();
+    						
+    						File destinationPath = new File(zipPath, entry.getName());
+    						 
+    						//create parent directories
+    						destinationPath.getParentFile().mkdirs();
+    						
+    						// if the entry is a file extract it
+    						if (entry.isDirectory()) {
+    							continue;
+    						}
+    						else {
+    							
+    							System.out.println("Extracting file: " + destinationPath);
+    							
+    							BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
+
+    							int b;
+    							byte buffer[] = new byte[1024];
+
+    							FileOutputStream fos = new FileOutputStream(destinationPath);
+    							
+    							BufferedOutputStream bos = new BufferedOutputStream(fos, 1024);
+
+    							while ((b = bis.read(buffer, 0, 1024)) != -1) {
+    								bos.write(buffer, 0, b);
+    							}
+    							
+    							bos.close();
+    							bis.close();
+    							
+    						}
+    						
+    					}
+    					VCSLogger.infoLogToCmd("Succesful PULL operation. Check: ../.vcs/pulltemp/");
+    				}
+    				catch (IOException ioe) {
+    					System.out.println("Error opening zip file: " + ioe);
+    				}
+				} //! HTTP CONN TO PULL
+    			catch (Exception e) {
+					// TODO: handle exception
+					e.printStackTrace();
+				}
+    		}
+    	    
+    	} //~for LOOP :: line:lines<String>
+		
+		return null;
+	}
 }
+
