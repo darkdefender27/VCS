@@ -19,14 +19,23 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Stack;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -36,23 +45,23 @@ import com.diff.core.MergeResult;
 import com.diff.core.MergeResultItem;
 
 import logger.VCSLogger;
+import network.ConfigManipulation;
 import objects.AbstractVCSTree;
 import objects.VCSBlob;
 import objects.VCSCommit;
 import objects.VCSTree;
 import vcs.Constants;
-
-
-
-
-
-
-
 //import network.HashUtil;
 import java.lang.System;
 
 public class Operations {
 
+	public static String getPullTempFolder(String workingDirectory) {
+		Path toCreateDirPath = Paths.get(workingDirectory + File.separator + Constants.VCSFOLDER
+				+ File.separator + Constants.PullTemp_FOLDER);
+		return toCreateDirPath.toString();
+	}
+	
 	public static String getBranchesFolder(String workingDirectory) {
 		Path toCreateDirPath = Paths.get(workingDirectory + Constants.VCSFOLDER
 				+ "/" + Constants.BRANCH_FOLDER);
@@ -123,6 +132,7 @@ public class Operations {
 			}
 			else
 			{
+				//CREATE or UPDATE repoListHolder
 				String repoName = null;
 				String sample = vcsPath.toString();
 				if(sample.contains("\\"))
@@ -169,7 +179,7 @@ public class Operations {
 					VCSLogger.infoLogToCmd("Error in creating the File repoListHolder: " + e);
 				} 
 				
-				
+				//CREATE .VCS FOLDER
 				boolean vcsFolderCreated=new File(vcsPath.toString()).mkdir();
 				if(vcsFolderCreated)
 				{
@@ -593,7 +603,8 @@ public class Operations {
 		return retVal;
 	}
 
-	public VCSCommit getBranchHead(String workingDir,String branchName) throws IOException{
+	
+	public VCSCommit getBranchHead(String workingDir,String branchName,int flag) throws IOException{
 		BufferedReader br = null;
 		File branch = new File(workingDir + ".vcs/branches/" + branchName);
 		VCSCommit parent = null;
@@ -602,13 +613,12 @@ public class Operations {
 			br = new BufferedReader(new FileReader(workingDir + ".vcs/branches/" + branchName));
 			while ((sCurrentLine = br.readLine()) != null) 
 			{
-				parent = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_JUST_COMMIT);
+				parent = new VCSCommit(sCurrentLine, workingDir, flag);
 			}
 			br.close();
 		}
 		return parent;
 	}
-	
 	
 	public VCSCommit getCommitTreeFromHead(String workingDir,String branchName) throws IOException{
 		BufferedReader br = null;
@@ -860,7 +870,11 @@ public class Operations {
 		return relationList;
 		
 	}
-
+	
+	//WAIT
+	public void mergePullBranch() {
+		
+	}
 	
 	void mergeTree(VCSTree firstVCSTree,VCSTree secondVCSTree,VCSTree mergedVCSTree, VCSTree commonAncestor) throws IOException
 	{
@@ -1112,7 +1126,7 @@ public class Operations {
 	    }
 	    else
 	    {
-	    	VCSCommit VCSCommitObj = getBranchHead(workingDirectory, nameOfBranch);
+	    	VCSCommit VCSCommitObj = getBranchHead(workingDirectory, nameOfBranch,VCSCommit.IMPORT_TREE);
 	    	writeHead(workingDirectory, VCSCommitObj.getObjectHash());
 	    	VCSCommitObj.getTree().writeOriginalToDisk();
 	    	
@@ -1225,7 +1239,10 @@ public class Operations {
 	        }
 	    }
 	}
-	public boolean writeCloneConfig(String workingDir, String repoUrl) throws IOException
+	
+	
+	
+/*	public boolean writeCloneConfig(String workingDir, String repoUrl) throws IOException
 	{
 		File config = new File(workingDir + Constants.VCSFOLDER + "/config");
 		boolean status;
@@ -1241,47 +1258,52 @@ public class Operations {
 		}
 		return status;
 	}	
-	
+	*/
 	public String clone(String repoUrl,String workDir){
 		URLConnection conn;
+		/** 
+		 * NanoHttpd serve() is automatically called 
+		 * and the response is stored in the InputStream variable response.
+		 * 
+		 * 1.) Now Unzip the .zip file received from the server and  
+		 * generate a local directory for the same with an updated config file. and extra updates (?Check)
+		 * 2.) On success, we add the remote repoUrl in config file with handle `origin`
+		 * config:
+		 * [remote 'origin'] url = repoUrl or http://127.0.0.1:8080/VCSD_1_1.vcs
+		 */
+
 		try {
 			conn = new URL(repoUrl + "?REQUEST=CLONE").openConnection();
 			//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
 			conn.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
 			conn.setRequestProperty("Accept","*/*");
+			VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
 			
-			int status = ((HttpURLConnection) conn).getResponseCode();
-			
-			VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
-			
-			/** 
-			 * NanoHttpd serve() is automatically called 
-			 * and the response is stored in the InputStream variable response.
-			 * 
-			 * 1.) Now Unzip the .zip file received from the server and  
-			 * generate a local directory for the same with an updated config file. and extra updates (?Check)
-			 * 2.) On success, we add the remote repoUrl in config file with handle `origin`
-			 * config:
-			 * [remote 'origin'] url = repoUrl or http://127.0.0.1:8080/VCSD_1_1.vcs
-			 */
-			/*
-			boolean writeStatus = writeCloneConfig(workDir, repoUrl);
-			if(writeStatus){
-				VCSLogger.infoLogToCmd("CONFIG WRITE SUCCESS.");
-			}
-			else {
-				VCSLogger.infoLogToCmd("CONFIG WRITE FAILURE.");
-			}
-			*/
-			
-			// ~UNZIP CODE
+			//int status = ((HttpURLConnection) conn).getResponseCode();
+			//VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
 			
 			String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
 			String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
 
 			String userWorkDir = System.getProperty("user.dir");
-			String filename = userWorkDir + "/" + fileNameWithoutExtn + ".zip";
+			//String userHomeDir = System.getProperty("user.home");
 			
+			//Receives Response from server (Check SimpleWebServer.java and stores in response InputStream)
+			InputStream response = conn.getInputStream();
+		
+			// Code to see the content received from the server side.
+			//New file created from the received response.
+			FileOutputStream outStream = new FileOutputStream(new File(userWorkDir + File.separator + fileNameWithoutExtn + ".zip"));
+			
+			byte buf[] = new byte[8192];
+			while(response.read(buf) > 0){
+				outStream.write(buf);
+			}
+			outStream.close();
+			response.close();
+			
+			// ~UNZIP CODE
+			String filename = userWorkDir + File.separator + fileNameWithoutExtn + ".zip";			
 			VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + filename);
 			
 			File srcFile = new File(filename);
@@ -1339,18 +1361,71 @@ public class Operations {
 				
 			}
 			catch (IOException ioe) {
-				System.out.println("Error opening zip file" + ioe);
+				System.out.println("Error opening zip file: " + ioe);
 			}
-			 finally {
-				 try {
-					 if (zipFile!=null) {
-						 zipFile.close();
-					 }
-				 }
-				 catch (IOException ioe) {
-						System.out.println("Error while closing zip file" + ioe);
-				 }
-			 }
+			finally 
+			{
+				try 
+				{
+					if (zipFile!=null) {
+						zipFile.close();
+					}
+				}
+				catch (IOException ioe) {
+					System.out.println("Error while closing zip file" + ioe);
+				}
+			}
+			
+			/**
+			 * Once the directory is cloned, update the config file and add any directories not zipped (empty)
+			 * i.e. create the dirs. in .vcs folder
+			 */
+			
+			String confPath = userWorkDir + File.separator + fileNameWithoutExtn + File.separator
+					+ Constants.VCSFOLDER + "/config";
+			ConfigManipulation cmClone = new ConfigManipulation(confPath);
+			cmClone.writeCloneConfig(repoUrl);
+			
+			/*getBranchesFolder(workingDirectory);
+			boolean branchesFolderCreated = new File(
+					Operations.getBranchesFolder(workingDirectory))
+					.mkdir();
+
+			getHooksFolder(workingDirectory);
+			boolean hooksFolderCreated = new File(
+					Operations.getHooksFolder(workingDirectory))
+					.mkdir();
+
+			getInfoFolder(workingDirectory);
+			boolean infoFolderCreated = new File(
+					Operations.getInfoFolder(workingDirectory)).mkdir();
+
+			getLogsFolder(workingDirectory);
+			boolean logsFolderCreated = new File(
+					Operations.getLogsFolder(workingDirectory)).mkdir();
+
+			getObjectsFolder(workingDirectory);
+			boolean objectsFolderCreated = new File(
+					Operations.getObjectsFolder(workingDirectory))
+					.mkdir();
+
+			getRefsFolder(workingDirectory);
+			boolean refsFolderCreated = new File(
+					Operations.getRefsFolder(workingDirectory)).mkdir();
+
+			getHeadsFolder(workingDirectory);
+			boolean headsFolderCreated = new File(
+					Operations.getHeadsFolder(workingDirectory))
+					.mkdir();
+
+			getTagsFolder(workingDirectory);
+			boolean tagsFolderCreated=new File(Operations.getTagsFolder(workingDirectory)).mkdir();
+			
+			if(branchesFolderCreated && hooksFolderCreated && infoFolderCreated && logsFolderCreated && objectsFolderCreated && refsFolderCreated && headsFolderCreated && tagsFolderCreated && configCreated)
+			{
+				VCSLogger.infoLogToCmd("Repository successfully cloned in " + userWorkDir);
+			}
+*/			
 			
 		} // ~UNZIP CODE 
 		
@@ -1363,4 +1438,553 @@ public class Operations {
 		}
 		return null;
 	}
+	
+	
+	/**
+	 * read commit tree, starting with current branch and returns a flattened and sorted arraylist based on timestamps
+	 * @param workingDir
+	 * @return
+	 */
+	public List<VCSCommit> readAndFlattenCommitTreeToList(String workingDir){
+		List<VCSCommit> flattenedCommitTree = new ArrayList<VCSCommit>();
+		Queue<VCSCommit> q=new LinkedList<VCSCommit>();
+		String currentBranch = null;
+		try {
+			currentBranch = getCurrentBranchName(workingDir);
+			VCSCommit branchHead = getBranchHead(workingDir, currentBranch,VCSCommit.IMPORT_COMMITS);
+			// not on any branch, so unconditional return
+			if (branchHead == null)
+				return null;
+			q.add(branchHead);
+
+			VCSCommit qElement = null;
+			ArrayList<VCSCommit> qElementAncestors = null;
+			while (!q.isEmpty()) {
+				qElement = q.remove();
+				flattenedCommitTree.add(qElement);
+				qElementAncestors = qElement.getParentCommits();
+				for (VCSCommit commit : qElementAncestors) {
+					q.add(commit);
+				}
+			}
+
+			Collections.sort(flattenedCommitTree, new Comparator<VCSCommit>() {
+
+				@Override
+				public int compare(VCSCommit o1, VCSCommit o2) {
+					return (o1.getCommitTimestamp() < o2.getCommitTimestamp()) ? 1
+							: -1;
+				}
+			});
+		} catch (IOException e) {
+
+		}
+
+		return flattenedCommitTree;
+	}
+	
+	public void vcsCommitLog(String workingDir){
+		List<VCSCommit> commitList = readAndFlattenCommitTreeToList(workingDir);
+		StringBuilder builder = new StringBuilder();
+		for(VCSCommit commit : commitList){
+			//commit hash
+			builder.append("Commit ");
+			builder.append(commit.getObjectHash());
+			builder.append("\n\t");
+			//\t author
+			builder.append("Author: ");
+			builder.append(commit.getAuthor());
+			
+			builder.append("\n\t");
+			//\tmeasssage
+			builder.append("Message: ");
+			builder.append(commit.getCommitMessage());
+			builder.append("\n\t");
+			
+			//\t timestamp
+			Date commitDate = new Date(commit.getCommitTimestamp());
+			builder.append(commitDate);
+			builder.append("\n\t");
+			
+			//\tbranch
+			builder.append("Branch: ");
+			builder.append(commit.getBranchName());
+			builder.append("\n\t");
+			
+			builder.append("\n");
+		}
+		
+		VCSLogger.infoLogToCmd(builder.toString());
+	}
+	
+	public String pull(String remoteHandleName) {
+		
+		String userWorkDir = System.getProperty("user.dir");
+		//String userHomeDir = System.getProperty("user.home");
+
+		String confPath = userWorkDir + File.separator + Constants.VCSFOLDER + "/config";
+		//File conf = new File(confPath);
+		
+		List<String> lines = null;
+		try {
+			lines = Files.readAllLines(Paths.get(confPath), Charset.defaultCharset());
+		} 
+		catch (IOException e) {
+			// TODO Auto-generated catch block
+			VCSLogger.infoLogToCmd("Config File not found: " + e);
+		}
+		
+		for (String line : lines) {
+    		if (line.contains("remote "+remoteHandleName)) {
+    			int i = lines.indexOf(line);
+    			i++;
+    			String urlLine = lines.get(i);
+    			urlLine.replaceAll("/s+", "");
+    			VCSLogger.infoLogToCmd("URL LINE: " + urlLine);
+    			String urlParts[] = urlLine.split("=");
+    			String repoUrl = urlParts[1];
+    			
+    			URLConnection conn;
+    			try {
+    				conn = new URL(repoUrl + "?REQUEST=PULL").openConnection();
+    				//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
+    				conn.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
+    				conn.setRequestProperty("Accept","*/*");
+    				VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
+    				
+    				//int status = ((HttpURLConnection) conn).getResponseCode();
+    				//VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
+    				
+    				String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
+    				String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
+
+    				InputStream response = conn.getInputStream();
+    				
+    				getPullTempFolder(userWorkDir);
+    				boolean pullTempCreated = new File(Operations.getPullTempFolder(userWorkDir)).mkdir();
+    				if(pullTempCreated) {
+    					VCSLogger.infoLogToCmd("> Creatd pulltemp directory in .vcs");
+    				}
+    				else {
+    					VCSLogger.infoLogToCmd("> Could not create pulltemp directory in .vcs");
+    				}
+    				
+    				//#!
+    				String zipFilePath = userWorkDir + File.separator + Constants.VCSFOLDER + File.separator +
+    						Constants.PullTemp_FOLDER + File.separator + ".vcs.zip";
+    				VCSLogger.infoLogToCmd("zipFilePath: " + zipFilePath);
+    				FileOutputStream outStream = new FileOutputStream(new File(zipFilePath));
+    				
+    				byte buf[] = new byte[8192];
+    				while(response.read(buf) > 0){
+    					outStream.write(buf);
+    				}
+    				outStream.close();
+    				response.close();
+    				
+    				/**
+    				 * UNZIP CODE
+    				 */
+    				String filename = userWorkDir + File.separator + Constants.VCSFOLDER + File.separator + 
+    						Constants.PullTemp_FOLDER + File.separator + ".vcs.zip";			
+    				VCSLogger.infoLogToCmd("Unzipping...\nFILE:  " + filename);
+    				
+    				File srcFile = new File(filename);
+    				
+    				// create a directory with the same name to which the contents will be extracted
+    				String zipPath = filename.substring(0, filename.length()-4);
+    				File temp = new File(zipPath);
+    				temp.mkdir();
+    				
+    				ZipFile zipFile = null;
+    				
+
+    				try {
+    					
+    					zipFile = new ZipFile(srcFile);
+    					
+    					// get an enumeration of the ZIP file entries
+    					Enumeration<?> e = zipFile.entries();
+    					
+    					while (e.hasMoreElements()) {
+    						
+    						ZipEntry entry = (ZipEntry) e.nextElement();
+    						
+    						File destinationPath = new File(zipPath, entry.getName());
+    						 
+    						//create parent directories
+    						destinationPath.getParentFile().mkdirs();
+    						
+    						// if the entry is a file extract it
+    						if (entry.isDirectory()) {
+    							continue;
+    						}
+    						else {
+    							
+    							System.out.println("Extracting file: " + destinationPath);
+    							
+    							BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
+
+    							int b;
+    							byte buffer[] = new byte[1024];
+
+    							FileOutputStream fos = new FileOutputStream(destinationPath);
+    							
+    							BufferedOutputStream bos = new BufferedOutputStream(fos, 1024);
+
+    							while ((b = bis.read(buffer, 0, 1024)) != -1) {
+    								bos.write(buffer, 0, b);
+    							}
+    							
+    							bos.close();
+    							bis.close();	
+    						}
+    					}
+    					VCSLogger.infoLogToCmd("Succesful PULL operation. Check: ../.vcs/pulltemp/");
+    				}
+    				catch (IOException ioe) {
+    					System.out.println("Error opening zip file: " + ioe);
+    				}
+				} //! HTTP CONN TO PULL
+    			catch (Exception e) {
+					// TODO: handle exception
+					e.printStackTrace();
+				}
+    		}
+    	    
+    	} //~for LOOP :: line:lines<String>
+		
+		return null;
+	}
+	
+	
+//#!	PUSH-PULL-PUSH OP
+
+	public VCSCommit getLocalBranchHeadwithImportAllFlag(String workingDir, String branchName) throws IOException {
+		BufferedReader br = null;
+		File branch = new File(workingDir + ".vcs/branches/" + branchName);
+		VCSCommit localHead = null;
+		String sCurrentLine;
+		if(branch.exists()){
+			br = new BufferedReader(new FileReader(workingDir + ".vcs/branches/" + branchName));
+			while ((sCurrentLine = br.readLine()) != null) 
+			{
+				localHead = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_ALL);
+			}
+			br.close();
+		}
+		
+		return localHead;
+	}
+	
+	public VCSCommit getRemoteBranchHeadwithImportAllFlag(String workingDir, String branchName, String tmpDirName) throws IOException {
+		BufferedReader br = null;
+		File branch = new File(workingDir + ".vcs/" + tmpDirName + "/.vcs/branches/" + branchName);
+		VCSCommit remoteHead = null;
+		String sCurrentLine;
+		if(branch.exists()){
+			br = new BufferedReader(new FileReader(workingDir + ".vcs/" + tmpDirName + "/.vcs/branches/" + branchName));
+			while ((sCurrentLine = br.readLine()) != null) 
+			{
+				remoteHead = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_ALL, tmpDirName);
+			}
+			br.close();
+		}
+		
+		return remoteHead;
+	}
+	
+	public VCSCommit getLCA(LinkedList<VCSCommit> localLL, LinkedList<VCSCommit> remoteLL) {
+		
+		VCSCommit LCA = null;
+		
+		int localLength = localLL.size();
+		int remoteLength = remoteLL.size();
+		int diff = 0;
+		
+		if(localLength>remoteLength) {
+			int i = 0;
+			diff = localLength-remoteLength;
+			int j = i + diff;
+			while((localLL.get(j) != null) && (remoteLL.get(i) != null )) {
+				if(localLL.get(j).equals(remoteLL.get(i))) {
+					LCA = localLL.get(j);
+				}
+				i++;
+				j++;
+			}
+		}
+		else {
+			// localListLength < remoteListLength
+			int i = 0;
+			diff = remoteLength-localLength;
+			int j = i + diff;
+			while((localLL.get(i) != null) && (remoteLL.get(j) != null )) {
+				if(localLL.get(i).equals(remoteLL.get(j))) {
+					LCA = localLL.get(i);
+				}
+				i++;
+				j++;
+			}
+		}
+		
+		if(LCA.equals(null)){
+			VCSLogger.infoLogToCmd("THE TWO BRANCHES DO NOT SHARE A COMMON ANCESTOR. HENCE, LCA: 'NULL'");
+		}
+		else {
+			VCSLogger.debugLogToCmd("NETWORK:PUSH", "LCA FOUND: " + LCA);
+		}
+		
+		return LCA;
+	}
+	
+	/**
+	 * push-pull-push
+	 * 1. CLoned
+	 * 2. Added & Commit
+	 * 3. Push :
+	 * 		a) pull
+	 * 		b) set Lock on 'S'
+	 * 		c) *merge
+	 * 		d) push changes
+	 * 		e) release lock on 'S'
+	 * @return null
+	 * @throws IOException 
+	 */
+	public String push(String remoteHandleName, String targetBranchName) throws IOException {
+		// push origin master (push 'remoteHandleName' 'targetBranchName')
+		
+		/*
+		 * PUSH=PULL=PUSH FORMAT
+		 */
+		String userWorkDir = System.getProperty("user.dir");
+		//String userHomeDir = System.getProperty("user.home");
+		String tmpDirName = "pulltemp";
+		String workingDir = userWorkDir + File.separator;
+		String confPath = userWorkDir + File.separator + Constants.VCSFOLDER + "/config";
+		
+		List<String> lines = null;
+		try {
+			lines = Files.readAllLines(Paths.get(confPath), Charset.defaultCharset());
+		} 
+		catch (IOException e) {
+			// TODO Auto-generated catch block
+			VCSLogger.infoLogToCmd("Config File not found: " + e);
+		}
+		
+		String repoUrl = null;
+		for (String line : lines) {
+    		if (line.contains("remote "+remoteHandleName)) {
+    			int i = lines.indexOf(line);
+    			i++;
+    			String urlLine = lines.get(i);
+    			urlLine.replaceAll("/s+", "");
+    			VCSLogger.infoLogToCmd("URL LINE: " + urlLine);
+    			String urlParts[] = urlLine.split("=");
+    			
+    			repoUrl = urlParts[1];
+    		}
+		}
+		
+		if(repoUrl.equals(null)) {
+			VCSLogger.debugLogToCmd("PUSH:REPOURL:CONFIG", "FAILED TO OBTAIN repoUrl from .config");
+		}
+		else {
+			VCSLogger.debugLogToCmd("PUSH:REPOURL:CONFIG", "REPO_URL: " + repoUrl);
+		}
+		
+		URLConnection conn1;
+		
+//#!#!#!!#!# 	AUTHOR NAME ?? TEMP: "darkDefender"
+		
+		String author = "darkDefender";
+		String LOCK_RESPONSE = "HALT";
+		try {
+			conn1 = new URL(repoUrl + "?REQUEST=PUSH"+"?AUTHOR="+author).openConnection();
+			//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
+			conn1.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
+			conn1.setRequestProperty("Accept","*/*");
+			VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
+			
+			//String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
+			//String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
+
+			InputStream response = conn1.getInputStream();
+			
+			FileOutputStream outStream = new FileOutputStream(new File(workingDir + "checkLockResponse"));
+			
+			byte buf[] = new byte[8192];
+			while(response.read(buf) > 0){
+				outStream.write(buf);
+			}
+			outStream.close();
+			response.close();
+			
+//#!#!#! 	CHECK LOCK RESPONSE
+			
+			
+			String LOCK_ST = null;
+			String fName = workingDir + "checkLockResponse";
+			List<String> filelines = Files.readAllLines(Paths.get(fName), Charset.defaultCharset());
+    		
+        	for (String line : filelines) {
+        		String parts[] = line.split(" ");
+        	    if(author.equals(parts[0])) {
+        	    	LOCK_ST = parts[1];
+        	    	if(LOCK_ST.equals("true")) {
+        	    		LOCK_RESPONSE = "PROCEED";
+        	    	}
+        	    }
+        	}
+			
+			//int status = ((HttpURLConnection) conn1).getResponseCode();
+			//VCSLogger.infoLogToCmd("CONN COMPLETE -- HTTP STATUS RECEIVED: " + status);
+		}
+		catch(Exception e) {
+			VCSLogger.debugLogToCmd("PUSH:HTTPCONN1", "ERRORCONN1: FAILED TO CONNECT TO SERVER.");
+		}
+		
+		/*
+		 * LOCK == PROCEED
+		 * PULL remoteHandleName
+		 * AND PROCEED...
+		 */
+		
+//#!#!#!	PROCEEDED...
+		
+		if(LOCK_RESPONSE.equals("PROCEED")) {
+			
+			pull(remoteHandleName);
+			
+			VCSCommit localObject = getLocalBranchHeadwithImportAllFlag(workingDir, targetBranchName);
+			VCSCommit remoteObject = getRemoteBranchHeadwithImportAllFlag(workingDir, targetBranchName, tmpDirName);
+			
+			/*
+			 * Finding LCA for the two linked lists,
+			 * namely localObject and remoteObject
+			 * 
+			 * 1. Constructing a Linked List of type VCSCommit corresponding to each local and remote
+			 * 2. Add respective parents of each VCSCommit object in the linked list
+			 * 3. In case a VCSCommit object has more than one parent, select the first parent i.e. 0th positioned parent
+			 * 4. 
+			 * 
+			 */
+			
+			LinkedList<VCSCommit> localLL = new LinkedList<VCSCommit>();
+			LinkedList<VCSCommit> remoteLL = new LinkedList<VCSCommit>();
+			
+			VCSCommit localparentObj = localObject;
+			while(localparentObj!=null) {	
+				localLL.add(localparentObj);
+				localparentObj=localparentObj.getParentCommits().get(0);
+			}
+			
+			VCSCommit remoteparentObj = remoteObject;
+			while(remoteparentObj!=null) {	
+				remoteLL.add(remoteparentObj);
+				remoteparentObj=remoteparentObj.getParentCommits().get(0);
+			}
+			
+			VCSCommit LCA = getLCA(localLL, remoteLL);
+			
+			
+			/*
+			 * FOR EVERY NEW ELEMENT (VCSCommit Object) FROM REMOTE DO:
+			 * 0. FIND SUCH ELEMENTS (STACK|QUEUE)
+			 * 1. WRITE ORIGINALS TO DISK
+			 * 2. WRITE COMMIT TO DISK
+			 */
+			
+			Queue<VCSCommit> newElems = new LinkedList<VCSCommit>();
+			Stack<VCSCommit> writeElems = new Stack<VCSCommit>();
+			
+			newElems.add(remoteObject);
+			
+			while(!newElems.isEmpty()) {
+				VCSCommit item = newElems.remove();
+				writeElems.add(item);
+				
+				ArrayList<VCSCommit> itemsList = item.getParentCommits(); 
+				for(VCSCommit e : itemsList) {
+					if(!e.equals(LCA)){
+						newElems.add(e);
+					}
+				}
+			}
+			
+			ArrayList<VCSCommit> finalElements = new ArrayList<VCSCommit>();
+			while(!writeElems.empty()) {
+				finalElements.add(writeElems.pop());
+			}
+			
+			for(VCSCommit de : finalElements){
+				if(de.getTree().writeOriginalToDisk()) {
+					VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITEORIGINALSTODISKS", "NEW ELEMENTS FROM REMOTE WRITTEN SUCCESSFULLY TO DISK.");
+				}
+				else {
+					VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITEORIGINALSTODISKS", "#! NEW ELEMENTS FROM REMOTE WRITE FAILED TO DISK.");
+				}
+				if(de.writeCommitToDisk()) {
+					VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITECOMMITSTODISKS", "NEW ELEMENTS FROM REMOTE WRITTEN SUCCESSFULLY TO DISK.");
+				}
+				else {
+					VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITECOMMITSTODISKS", "#! NEW ELEMENTS FROM REMOTE WRITE FAILURE TO DISK.");
+				}
+			}
+			
+			/*
+			 * MERGE(localObject, remoteObject, LCA)
+			 */
+			VCSTree mergedVCSTree = null;
+			mergeTree(localObject.getTree(), remoteObject.getTree(), mergedVCSTree, LCA.getTree());
+			
+			/*
+			 * UPDATE INFORMATION OBTAINED AFTER MERGE
+			 * 1. DEVELOPER LIST
+			 * 2. CURRENT BRANCH HEAD
+			 * 3. HEAD
+			 */
+			
+			
+			/*
+			 * PUSH FINAL CHANGES TO SERVER
+			 */
+			
+			URLConnection conn2;
+			
+		//#!#!#!#!#!#!#! 	SEND DATA TO THE SERVER: NANO?
+			
+			try {
+				conn2 = new URL(repoUrl + "?REQUEST=PUSH").openConnection();
+				//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
+				conn2.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
+				conn2.setRequestProperty("Accept","*/*");
+				VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
+				
+				//String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
+				//String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
+
+				//InputStream response = conn.getInputStream();
+				int status = ((HttpURLConnection) conn2).getResponseCode();
+				VCSLogger.infoLogToCmd("CONN COMPLETE -- HTTP STATUS RECEIVED: " + status);
+			}
+			catch(Exception e) {
+				VCSLogger.debugLogToCmd("PUSH:HTTPCONN", "FAILED TO CONNECT TO SERVER.");
+			}
+		}//~LOCK_RESPONSE == PROCEED
+		else {
+			VCSLogger.infoLogToCmd("A LOCK EXISTS ON THE REMOTE LOCATION. PLEASE WAIT...");
+		}
+		
+		
+		return null;
+	}
 }
+
+
+
+
+
+
+
+

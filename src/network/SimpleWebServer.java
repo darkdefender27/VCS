@@ -4,6 +4,8 @@ import java.io.*;
 import java.net.URLEncoder;
 import java.util.*;
 
+import logger.VCSLogger;
+
 /**
  * An example of subclassing NanoHTTPD to make a custom HTTP server.
  */
@@ -56,9 +58,8 @@ public class SimpleWebServer extends NanoHTTPD {
 		if (uri.contains(".vcs")) {
 			uri = uri.substring(1, uri.length());
 			String request = parms.get("REQUEST");
-			
-			//Check the ?REEQUEST parameter for value: CLONE
 			if (request != null) {
+				//Check the ?REQUEST parameter for value: CLONE	
 				if (parms.get("REQUEST").equals("CLONE")) {
 					System.out.println("URI = " + uri); // Example: URI = abcd.vcs 
 					File repoRoot = ops.CloneRepository(uri); //Operation in NetworkOps
@@ -66,17 +67,31 @@ public class SimpleWebServer extends NanoHTTPD {
 					//return serveFile("/views.py", header, f);
 					return serveFile("", header, repoRoot);
 				}
+				//Check the ?REQUEST parameter for value: PULL
+				if (parms.get("REQUEST").equals("PULL")) {
+					System.out.println("PULL CONTENTS FROM URI = " + uri); // Example: URI = abcd.vcs 
+					File pulledRepoFile = ops.PullRepository(uri); //Operation in NetworkOps
+					return serveFile("", header, pulledRepoFile);
+				}
+				//Check the ?REQUEST parameter for value: PULL
+				if (parms.get("REQUEST").equals("PUSH")) {
+					VCSLogger.infoLogToCmd("PUSH CONTENTS TO URI = " + uri); // Example: URI = abcd.vcs 
+					String authorName = parms.get("AUTHOR");
+					File pushStatus = ops.pushRepository(uri, authorName); //Operation in NetworkOps
+					return serveFile("", header, pushStatus);
+				}
 			}
 		}
 		return new NanoHTTPD.Response(msg);
 	}
 
 	Response serveFile(String uri, Map<String, String> header, File homeDir) {
-		File f = new File(homeDir, uri);
+		File f = homeDir;
 		// System.out.println(homeDir+uri);
 		Response res = null;
 		if (f.exists()) {
-			// System.out.println("\n\nexists\n\n");
+			VCSLogger.infoLogToCmd("FLE EXISTS!!");
+			//System.out.println("\n\nexists\n\n");
 			try {
 				if (res == null) {
 					// Get MIME type from file name extension, if possible

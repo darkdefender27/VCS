@@ -85,18 +85,51 @@ public class VCS {
 				e.printStackTrace();
 			}
 		}
+		else
+		{
+			System.out.println("here");
+			try 
+			{
+				boolean created=f.createNewFile();
+				if(created)
+				{
+					BufferedWriter bw=new BufferedWriter(new FileWriter(f));
+					bw.append("[user]");
+					bw.append("\n");
+					bw.append("\t");
+					bw.append("name=");
+					bw.append("newUser");
+					bw.append("\n");
+					bw.append("\t");
+					bw.append("email=");
+					bw.append("newUser@newUser.com");
+					bw.close();
+					retVal="newUser";
+				}
+				
+			} 
+			catch (IOException e) 
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		return retVal;
 	}
 
 	public static void main(String[] args)
 	{
 		String userName=null;
+		//place your cmdArgs here if required
 		
+		String cmdArgs = "log /home/rounak/final#year#project/VCS#v1.5.0/VCSDebug/";
+		//String cmdArgs = "switch /home/rounak/final#year#project/VCS#v1.5.0/VCSDebug/ branch branch1";
 		args = cmdArgs.split(" ");
+		
+		//end of cmdArgs
 		userName=getUserName();
 		args[1] = replaceHashWithSpace(args[1]);
-		//args = cmdArgs.split(" ");
-		//args[1] = replaceHashWithSpace(args[1]);
+		
 		boolean flag = false;
 		int argLength = args.length;
 		if( argLength >= 1){
@@ -122,8 +155,23 @@ public class VCS {
 					scanner.close(); // Scanner was not closed.
 				}
 				if (args[0].equals("clone") && argLength == 3){
+					//clone http://ip:port/repoName.vcs /home/../somePathOnLocalMachine/
 					ops.clone(args[1],args[2]);
 				}
+				if (args[0].equals("pull") && argLength == 2){
+					//pull origin i.e. "vcs pull remote_handle_name"
+					ops.pull(args[1]);
+				}
+				if (args[0].equals("push") && argLength == 3){
+					//push origin master i.e. "vcs push remote_handle_name target_branch_name"
+					try {
+						ops.push(args[1], args[2]);
+					} 
+					catch (IOException e) {
+						VCSLogger.debugLogToCmd("NETWORK:PUSH", "PUSH FAILED AT START: " + e);
+					}
+				}
+				
 				//~~
 			
 				if(args[0].equals("init") && argLength == 2){
@@ -210,9 +258,9 @@ public class VCS {
 					}
 					if(status) VCSLogger.infoLogToCmd("Successfully checked out");
 				}
-				if(args[0].equals("commit") && argLength == 4){
-					//commit workDir user message
-					String workingDir = replaceHashWithSpace(args[1]);
+				if(args[0].equals("commit") && argLength == 3){
+					//commit workDir message
+					String workingDir = args[1];
 					String message = args[2];
 					BufferedReader br = null;
 					File stagingFile = new File(workingDir + ".vcs/info/staged");
@@ -232,7 +280,7 @@ public class VCS {
 							
 							VCSCommit parent =  ops.getHead(workingDir);
 							
-							userName="darkDefender";
+							//userName="darkDefender";
 							
 							String commitHash = ops.commit(stagedFiles, parent, message, userName, userName, workingDir);
 				    	    ops.writeHead(workingDir, commitHash);
@@ -303,10 +351,12 @@ public class VCS {
 						if(ops!=null)
 						{
 							System.out.println("ops not null");
-							if(ops.getBranchHead(workDir, firstBranchName)!=null && ops.getBranchHead(workDir, secondBranchName)!=null)
+							VCSCommit firstBranchHead = ops.getBranchHead(workDir, firstBranchName,VCSCommit.IMPORT_TREE);
+							VCSCommit secondBranchHead = ops.getBranchHead(workDir, secondBranchName,VCSCommit.IMPORT_TREE);
+							if(firstBranchHead !=null && secondBranchHead !=null)
 							{
 								System.out.println("preparing for merge");
-								flag = ops.mergeBranch(workDir, ops.getBranchHead(workDir, firstBranchName).getObjectHash(),ops.getBranchHead(workDir, secondBranchName).getObjectHash(),null);
+								flag = ops.mergeBranch(workDir, firstBranchHead.getObjectHash(),secondBranchHead.getObjectHash(),null);
 							}
 						}
 					} catch (IOException e) {
@@ -319,6 +369,9 @@ public class VCS {
 						System.out.println("Branch merged successfully");
 					}
 					
+				}if(args[0].equals("log") && argLength == 2){
+					//log workdir
+					ops.vcsCommitLog(args[1]);
 				}
 			}
 		}
