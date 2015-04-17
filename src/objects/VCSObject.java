@@ -80,6 +80,8 @@ public abstract class VCSObject {
 			}
 			this.objectHash = hexString.toString();
 			return this.objectHash;
+		}else{
+			System.out.println("Content empty");
 		}
 		return null;
 	}

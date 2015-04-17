@@ -121,6 +121,18 @@ public class VCSCommit extends VCSObject
 		VCSLogger.debugLogToCmd("VCSCommit#", "commit initialised");
 	}
 	
+	public void reHashContent()
+	{
+		try 
+		{
+			hashContent(getContent());
+		}
+		catch (NoSuchAlgorithmException | IOException e) 
+		{
+			//TODO Auto-generated catch block
+			VCSLogger.errorLogToCmd("VCSCommit#", e.toString());
+	    }
+	}
 	public VCSCommit(String objectHash,String workingDirectory,int importFlag){
 		super(workingDirectory);
 		this.objectHash = objectHash;
