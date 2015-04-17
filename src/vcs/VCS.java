@@ -92,11 +92,6 @@ public class VCS {
 	{
 		String userName=null;
 		
-		//String cmdArgs = "init C:/Users/Ambarish/Desktop/vcsdebug/";
-		//String cmdArgs = "add C:/Users/Ambarish/Desktop/vcsdebug/ *";
-		String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ master_4";
-		//String cmdArgs = "create C:/Users/Ambarish/Desktop/vcsdebug/ branch b1 a46a7d06dbbcdef2d9ab10365e634edc9a629a7c593df712017ca31c31e33";
-		//String cmdArgs ="switch C:/Users/Ambarish/Desktop/vcsdebug/ branch master";
 		args = cmdArgs.split(" ");
 		userName=getUserName();
 		args[1] = replaceHashWithSpace(args[1]);
@@ -106,7 +101,7 @@ public class VCS {
 		int argLength = args.length;
 		if( argLength >= 1){
 			
-			if(userName!=null)
+			//if(userName!=null)
 			{
 				Operations ops = new Operations();
 				
@@ -215,7 +210,7 @@ public class VCS {
 					}
 					if(status) VCSLogger.infoLogToCmd("Successfully checked out");
 				}
-				if(args[0].equals("commit") && argLength == 3){
+				if(args[0].equals("commit") && argLength == 4){
 					//commit workDir user message
 					String workingDir = replaceHashWithSpace(args[1]);
 					String message = args[2];
@@ -299,13 +294,21 @@ public class VCS {
 						System.out.println("Branch switched successfully");
 					}
 				}
-				if(args[0].equals("merge") && args[1].equals("branch") && argLength == 4)
+				if(args[0].equals("merge") && args[1].equals("branch") && argLength == 5)
 				{
-					String firstBranchName = args[2];
-					String secondBranchName = args[3];
+					String firstBranchName = args[3];
+					String secondBranchName = args[4];
 					try {
-						String workDir = replaceHashWithSpace(args[1]);
-						flag = ops.mergeBranch(workDir, firstBranchName,secondBranchName);
+						String workDir = replaceHashWithSpace(args[2]);
+						if(ops!=null)
+						{
+							System.out.println("ops not null");
+							if(ops.getBranchHead(workDir, firstBranchName)!=null && ops.getBranchHead(workDir, secondBranchName)!=null)
+							{
+								System.out.println("preparing for merge");
+								flag = ops.mergeBranch(workDir, ops.getBranchHead(workDir, firstBranchName).getObjectHash(),ops.getBranchHead(workDir, secondBranchName).getObjectHash(),null);
+							}
+						}
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

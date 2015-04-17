@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -12,6 +13,7 @@ import java.io.FileWriter;
 //import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -21,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -30,6 +33,7 @@ import java.util.zip.ZipFile;
 import com.diff.core.Diff;
 import com.diff.core.FileDiffResult;
 import com.diff.core.MergeResult;
+import com.diff.core.MergeResultItem;
 
 import logger.VCSLogger;
 import objects.AbstractVCSTree;
@@ -37,6 +41,12 @@ import objects.VCSBlob;
 import objects.VCSCommit;
 import objects.VCSTree;
 import vcs.Constants;
+
+
+
+
+
+
 
 //import network.HashUtil;
 import java.lang.System;
@@ -258,15 +268,30 @@ public class Operations {
 
 	public boolean writeHead(String workingDir, String commitHash)
 			throws IOException {
-		File head = new File(getHeadsFolder(workingDir) + "/head");
-		FileWriter fileWritter = new FileWriter(head, false);
-		BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
-		bufferWritter.write(commitHash);
-		bufferWritter.close();
+		{
+			File head = new File(getHeadsFolder(workingDir) + "/head");
+			FileWriter fileWritter = new FileWriter(head, false);
+			BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
+			bufferWritter.write(commitHash);
+			bufferWritter.close();
+		}
+
+		{
+			System.out.println("reached here!!");
+			File head = new File(getHeadsFolder(workingDir) + "/currentBranch");
+			System.out.println("not reached here!!");
+			FileWriter fileWritter = new FileWriter(head, false);
+			BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
+			System.out.println("Inside write head..hash = "+commitHash);
+			VCSCommit commitObj = new VCSCommit(commitHash, workingDir, VCSCommit.IMPORT_JUST_COMMIT);
+			bufferWritter.write(commitObj.getBranchName());
+			bufferWritter.close();
+		}
+		
 		return true;
 	}	
 
-	public String commit(String[] stagedFiles,VCSCommit parentCommit, String message,String author,String committer,String workingDir)
+	public String commit(String[] stagedFiles,VCSCommit parentCommit, String message,String author,String committer,String workingDir) throws IOException
 	{
 		VCSTree workDir = new VCSTree("workDir", workingDir, workingDir);
 		workDir.setModified(true);
@@ -274,6 +299,7 @@ public class Operations {
 		VCSTree eleAtPath = null;
 		VCSBlob lastEleAtPath = null;
 		int[] insertedDeleted=null;
+		int noOfLinesAdded=0,noOfLinesDeleted=0;
 		for(int i=0;i<stagedFiles.length;i++)
 		{
 			currentTree = workDir;
@@ -320,6 +346,8 @@ public class Operations {
 				}
 			
 			insertedDeleted=doDiffWork(parentCommit, stagedFiles[i], workingDir);
+			noOfLinesAdded+=insertedDeleted[0];
+			noOfLinesDeleted+=insertedDeleted[1];
 		}
 		if(parentCommit!=null)
 		{
@@ -331,8 +359,8 @@ public class Operations {
 		
 		VCSLogger.debugLogToCmd("Operations#commit#newTree\n",workDir.printTree(0));
 		VCSCommit iniCommit = new VCSCommit(workingDir, parentCommit, workDir, message, author, committer);
-		iniCommit.setNoOfLinesInserted(insertedDeleted[0]);
-		iniCommit.setNoOfLinesDeleted(insertedDeleted[1]);
+		iniCommit.setNoOfLinesInserted(noOfLinesAdded);
+		iniCommit.setNoOfLinesDeleted(noOfLinesDeleted);
 		
 		boolean done=writeToDeveloperList(committer,workingDir);
 		
@@ -350,7 +378,7 @@ public class Operations {
 		
 		
 		System.out.println("branchName= "+iniCommit.getBranchName());
-		System.out.println("lines added " +insertedDeleted[0]+" lines deleted "+insertedDeleted[1]);
+		System.out.println("lines added " +noOfLinesAdded+" lines deleted "+noOfLinesDeleted);
 		iniCommit.setCommitTimestamp(System.currentTimeMillis());
 		iniCommit.writeCommitToDisk();
 		System.out.println("commit hash	"+iniCommit.getObjectHash());
@@ -530,84 +558,27 @@ public class Operations {
 
 	}
 
-	public String getCurrentBranchName(String workingDir)
+	public String getCurrentBranchName(String workingDir) throws IOException
 	{
-		String head;
-		try 
+		File currentBranchFile =  new File(workingDir + ".vcs/refs/heads/currentBranch");
+		if(currentBranchFile.exists())
 		{
-			VCSCommit temp=getHead(workingDir);
-			if(temp!=null)
-			{
-				head=temp.getObjectHash();
-				System.out.println("head =" +head);
-			}
-			else
-			{
-				head=null;
-			}
-		} 
-		catch (IOException e) 
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			head=null;
-		}
-		ArrayList<String> branchHeads=new ArrayList<String>();
-		String branchesFolder=workingDir+"/" +Constants.VCSFOLDER +"/" +Constants.BRANCH_FOLDER;
-		String branchName=null;
-		listAllFiles(branchesFolder, branchHeads, branchesFolder);
-		int size=branchHeads.size();
-		boolean done=false;
-		if(head!=null && branchHeads!=null && size>0)
-		{
-			int i=0;
-			while(i<size && done==false)
-			{
-				File f=new File(branchHeads.get(i));
-				if(f.exists())
-				{
-					BufferedReader br;
-					try 
-					{
-						br = new BufferedReader(new FileReader(f));
-					}
-					catch (FileNotFoundException e) 
-					{
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-						br=null;
-					}
-					String line;
-					try 
-					{
-						while((line=br.readLine())!=null)
-						{
-							if(line.equals(head))
-							{
-								branchName=f.getName();
-								done=true;
-							}
-						}
-					}
-					catch (IOException e) 
-					{
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-						branchName=null;
-					}
-				}
-				i++;
-			}
-			if(branchName==null)
-			{
-				throw new NullPointerException();
-			}
-		}
+			InputStream in = new FileInputStream(currentBranchFile);
+	        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+	        StringBuilder out = new StringBuilder();
+	        String line;
+	        while ((line = reader.readLine()) != null) {
+	            out.append(line);
+	        }
+	        System.out.println(out.toString());   //Prints the string content read from input stream
+	        reader.close();
+			
+	        return out.toString();
+        }
 		else
 		{
-			branchName= "master";
+			return "master";
 		}
-		return branchName;
 	}
 	
 	public static String readFileIntoString(String completeFileName) {
@@ -631,12 +602,13 @@ public class Operations {
 			br = new BufferedReader(new FileReader(workingDir + ".vcs/branches/" + branchName));
 			while ((sCurrentLine = br.readLine()) != null) 
 			{
-				parent = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_TREE);
+				parent = new VCSCommit(sCurrentLine, workingDir, VCSCommit.IMPORT_JUST_COMMIT);
 			}
 			br.close();
 		}
 		return parent;
 	}
+	
 	
 	public VCSCommit getCommitTreeFromHead(String workingDir,String branchName) throws IOException{
 		BufferedReader br = null;
@@ -663,22 +635,33 @@ public class Operations {
 		return true;
 	}
 	
-	boolean mergeBranch(String workingDirectory,String firstBranch,String secondBranch) throws IOException
+	boolean mergeBranch(String workingDirectory,String firstBranch,String secondBranch,String commonAncestorHash) throws IOException
 	{
 		boolean retval = false;
 		String branchDirectory = workingDirectory + ".vcs/branches";
 		System.out.println("inside mergeBranch");
 		//if(branchExists(workingDirectory, firstBranch) && branchExists(workingDirectory, secondBranch))
+
+		VCSCommit firstCommitObject = new VCSCommit(firstBranch, workingDirectory, VCSCommit.IMPORT_TREE);
+		VCSCommit secondCommitObject  = new VCSCommit(secondBranch, workingDirectory, VCSCommit.IMPORT_TREE);
+		
+		if(commonAncestorHash==null)
 		{
-			VCSCommit firstCommitObject = getBranchHead(workingDirectory, firstBranch);
-			VCSCommit secondCommitObject = getBranchHead(workingDirectory, secondBranch);
+			commonAncestorHash = getCommonAncestor(workingDirectory,firstCommitObject.getBranchName(), secondCommitObject.getBranchName());
+		}
+		if(commonAncestorHash!=null)
+		{
+			//VCSCommit firstCommitObject = getBranchHead(workingDirectory, firstBranch);
+			//VCSCommit secondCommitObject = getBranchHead(workingDirectory, secondBranch);
+			
+			
 			VCSTree firstVCSTree =  firstCommitObject.getTree();
 			VCSTree secondVCSTree =  secondCommitObject.getTree();
 			VCSTree mergedVCSTree =  new VCSTree(firstVCSTree.getName(), firstVCSTree.getPath(), workingDirectory);
 			
 			if(firstVCSTree == null && secondVCSTree == null)
 			{
-				System.out.println("1th case");
+				System.out.println("1st case");
 				return false;
 			}
 			else if(firstVCSTree == null && secondVCSTree != null)
@@ -695,54 +678,198 @@ public class Operations {
 			{
 				System.out.println("4th case");
 				
-				File branchOneTmpDir = new File(firstVCSTree.getWorkingDirectory()+".vcs/tmp/"+"branchOne/");
+				File branchOneTmpDir = new File(firstVCSTree.getWorkingDirectory()+".vcs/mergetmp/"+"branchOne/");
 				branchOneTmpDir.mkdirs();
-				File branchTwoTmpDir = new File(secondVCSTree.getWorkingDirectory()+".vcs/tmp/"+"branchTwo/");
+				File branchTwoTmpDir = new File(secondVCSTree.getWorkingDirectory()+".vcs/mergetmp/"+"branchTwo/");
 				branchTwoTmpDir.mkdirs();
-				File ancestorTmpDir = new File(secondVCSTree.getWorkingDirectory()+".vcs/tmp/"+"ancestor/");
+				File ancestorTmpDir = new File(secondVCSTree.getWorkingDirectory()+".vcs/mergetmp/"+"ancestor/");
 				ancestorTmpDir.mkdirs();
-				VCSTree commonAncestor = getCommonAncestor(firstVCSTree,secondVCSTree);
+				//String commonAncestorHash = getCommonAncestor(firstBranch,secondBranch);
+				VCSCommit commonAncestorCommit = new VCSCommit(commonAncestorHash, workingDirectory, VCSCommit.IMPORT_TREE);
+				VCSTree commonAncestor = commonAncestorCommit.getTree();
 				mergeTree(firstVCSTree,secondVCSTree,mergedVCSTree,commonAncestor);
 			}
+			System.out.println(mergedVCSTree.printTree(0));
 			//write mergedVCSTree to disk
 			mergedVCSTree.writeOriginalToDisk();
+			System.out.println(mergedVCSTree.findTreeIfExist("web.config", 0).getObjectHash());
+			//prepare commit object
+			VCSCommit mergedCommitObject = new VCSCommit(workingDirectory, firstCommitObject, mergedVCSTree, "merge", VCS.getUserName(), VCS.getUserName());
+			mergedCommitObject.addParent(secondCommitObject);
+			
+			mergedCommitObject.setCommitTimestamp(System.currentTimeMillis());
+			mergedCommitObject.setBranchName(firstCommitObject.getBranchName());
+			//int[] insertedDeleted=null;
+			//insertedDeleted = doDiffWork(firstCommitObject, fileName, workingDir);
+			
+			mergedCommitObject.reHashContent();
+			System.out.println();
+			System.out.println("commit hash is:"+mergedCommitObject.getObjectHash());
+			mergedCommitObject.writeCommitToDisk();
+			writeBranchHead(workingDirectory, mergedCommitObject.getObjectHash(), firstCommitObject.getBranchName());
+			writeHead(workingDirectory, mergedCommitObject.getObjectHash());
+			mergedVCSTree.writeOriginalToDisk();
+			
 		}
 		return retval;
 	}
-	private VCSTree getCommonAncestor(VCSTree firstVCSTree, VCSTree secondVCSTree) {
-		// TODO Auto-generated method stub
+
+	
+	public static String getCommonAncestor(String workingDirectory, String branch1, String branch2)
+	{
+		boolean found = false;
+		ArrayList<ArrayList<String>> relationList = caDiskToMemory(workingDirectory);
+		ArrayList<String> individualRelation = null;
 		
 		
-		int firstLength = getLength(firstVCSTree);
-		int secondLength = getLength(secondVCSTree);
-		int diff;
-		if(firstLength > secondLength)
+		//System.out.println("relation size is :"+relationList.size());
+		//int individualRelationSize = 3;
+		
+		while(!found)
 		{
-			diff= firstLength - secondLength;
-		}
-		else if(firstLength < secondLength)
-		{
-			diff = secondLength - firstLength;
-		}
-		else
-		{
-			diff = 0;
-		}
-		for(int i=0;i<diff;i++)
-		{
+			//System.out.println("here");
+			for(int i=0;i<relationList.size();i++)
+			{
+				ArrayList<String> arg0 = relationList.get(i);
+				if(arg0.get(0).equals(branch1) && arg0.get(1).equals(branch2))
+				{
+					found = true;
+					//take appropriate action(bring the commit object into memory)
+					return arg0.get(2);
+				}
+				else if(arg0.get(0).equals(branch2) && arg0.get(1).equals(branch1))
+				{
+					found = true;
+					//same action as above
+					return arg0.get(2);
+				}
+				for(int j=i+1;j<relationList.size() && !found ;j++)
+				{
+					ArrayList<String> arg1 = relationList.get(j);
+					if(arg0.get(0).equals(arg1.get(0)))
+					{
+						if(arg0.get(1).equals(branch1) && arg1.get(1).equals(branch2))
+						{
+							arg0.set(0, branch2);
+							arg0.set(2,arg1.get(2));
+							relationList.remove(j);
+							found = true;
+						}
+						else if(arg0.get(1).equals(branch2) && arg1.get(1).equals(branch1))
+						{
+							arg0.set(0, branch1);
+							arg0.set(2,arg1.get(2));
+							relationList.remove(j);
+							found = true;
+						}
+						
+					}
+					else if(arg0.get(1).equals(arg1.get(1)))
+					{
+						if(arg0.get(1).equals(branch1) && arg1.get(0).equals(branch2))
+						{
+							arg0.set(1, branch2);
+							arg0.set(2,arg1.get(2));
+							relationList.remove(j);
+							found = true;
+						}
+						else if(arg0.get(0).equals(branch2) && arg1.get(0).equals(branch1))
+						{
+							arg0.set(1, branch1);
+							arg0.set(2,arg1.get(2));
+							relationList.remove(j);
+							found = true;
+						}
+						
+					}
+					else if(arg0.get(0).equals(arg1.get(1)))
+					{
+						if(arg0.get(1).equals(branch1) && arg1.get(0).equals(branch2))
+						{
+							arg0.set(0, branch2);
+							arg0.set(2,arg1.get(2));
+							relationList.remove(j);
+							found = true;
+						}
+						else if(arg0.get(1).equals(branch2) && arg1.get(0).equals(branch1))
+						{
+							arg0.set(0, branch1);
+							arg0.set(2,arg1.get(2));
+							relationList.remove(j);
+							found = true;
+						}
+					}
+					else if(arg0.get(1).equals(arg1.get(0)))
+					{
+						System.out.println("inside else if");
+						if(arg0.get(0).equals(branch1) && arg1.get(1).equals(branch2))
+						{
+							arg0.set(1, branch2);
+							arg0.set(2,arg1.get(2));
+							relationList.remove(j);
+							found = true;
+						}
+						else if(arg0.get(0).equals(branch2) && arg1.get(1).equals(branch1))
+						{
+							arg0.set(1, branch1);
+							arg0.set(2,arg1.get(2));
+							relationList.remove(j);
+							found = true;
+						}
+					}
+				}
+				found = false;
+			}
 			
 		}
+		
 		return null;
 	}
-	private int getLength(VCSTree VCSTreeObj) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-	void mergeTree(VCSTree firstVCSTree,VCSTree secondVCSTree,VCSTree mergedVCSTree, VCSTree commonAncestor)
+	public static ArrayList<ArrayList<String>> caDiskToMemory(String workingDirectory)
 	{
+		String completeFile = readFileIntoString(workingDirectory+".vcs/commonAncestor");
+		//System.out.println(completeFile);
+		String textStr[] = completeFile.split("\\r?\\n");
+		//System.out.println("splitted file:");
+		/*
+		for(int i=0;i<textStr.length;i++)
+		{
+			System.out.println(textStr[i]);
+			System.out.println();
+		}
+		*/
+		ArrayList<String> tempRelationList = new ArrayList<String>(Arrays.asList(textStr));
+		int relationListSize = tempRelationList.size();
+		
+		ArrayList<ArrayList<String>> relationList = new ArrayList<ArrayList<String>>();
+		
+		for(int i=0;i<relationListSize;i++)
+		{
+			String individualRelation = tempRelationList.get(i);
+			String[] splited = individualRelation.split("\\s+");
+			System.out.println("splitted individual relation:");
+			for(int j=0;j<textStr.length;j++)
+			{
+				System.out.println(splited[j]);
+				System.out.println();
+			}
+			ArrayList<String> individualRelationArray = new ArrayList<String>(Arrays.asList(splited));
+			relationList.add(individualRelationArray);
+		}
+		
+		return relationList;
+		
+	}
+
+	
+	void mergeTree(VCSTree firstVCSTree,VCSTree secondVCSTree,VCSTree mergedVCSTree, VCSTree commonAncestor) throws IOException
+	{
+		System.out.println("mergeTree entered");
 		ArrayList<AbstractVCSTree> firstVCSTreeChildren = firstVCSTree.getImmediateChildren();
 		ArrayList<AbstractVCSTree> secondVCSTreeChildren = secondVCSTree.getImmediateChildren();
 		int firstVCSTreeChildrenLength = firstVCSTreeChildren.size();
+		
+		mergedVCSTree.setModified(true);
 		
 		int firstCounter=0;
 		int secondCounter=0;
@@ -755,6 +882,7 @@ public class Operations {
 			if(secondTmpObj!=null && secondTmpObj.getType().equals("tree"))
 			{
 				VCSTree mergedVCSTreeChild = new VCSTree(firstTmpObj.getName(),firstTmpObj.getPath(),firstTmpObj.getWorkingDirectory());
+				mergedVCSTreeChild.setModified(true);
 				mergedVCSTree.addItem(mergedVCSTreeChild);
 				mergeTree((VCSTree)firstTmpObj,(VCSTree)secondTmpObj,mergedVCSTreeChild,commonAncestor);
 				firstVCSTreeIterator.remove();
@@ -766,56 +894,171 @@ public class Operations {
 				//same hash => no change
 				if(firstTmpObj.getObjectHash().equals(secondTmpObj.getObjectHash()))
 				{
+					firstTmpObj.setModified(true);
 					mergedVCSTree.addItem(firstTmpObj);
+					
 				}
 				//changed files
 				else
 				{
 					System.out.println("Rao's merge entered");
-					mergedVCSTree.addItem(firstTmpObj);///delete after test..no use
+					//mergedVCSTree.addItem(firstTmpObj);///delete after test..no use
 					//call rao's function to merge both files
-					/*
-								((VCSBlob)firstTmpObj).writeOriginalToTempDir(firstTmpObj.getWorkingDirectory() + ".vcs/tmp/branchOne/" + firstTmpObj.getName());
-								((VCSBlob)secondTmpObj).writeOriginalToTempDir(secondTmpObj.getWorkingDirectory() + ".vcs/tmp/branchTwo/" + secondTmpObj.getName());
+					
+								((VCSBlob)firstTmpObj).writeOriginalToTempDir(firstTmpObj.getWorkingDirectory() + ".vcs/mergetmp/branchOne/" + firstTmpObj.getName());
+								((VCSBlob)secondTmpObj).writeOriginalToTempDir(secondTmpObj.getWorkingDirectory() + ".vcs/mergetmp/branchTwo/" + secondTmpObj.getName());
 								//((VCSBlob)firstTmpObj).writeOriginalToTempDir(firstTmpObj.getWorkingDirectory() + firstTmpObj.getRelativePath());
 								
 								
-								String file1Contents = readFileIntoString(firstTmpObj.getWorkingDirectory() + ".vcs/tmp/branchOne/" + firstTmpObj.getName());
-								String file2Contents = readFileIntoString(secondTmpObj.getWorkingDirectory() + ".vcs/tmp/branchTwo/" + secondTmpObj.getName());
+								String file1Contents = readFileIntoString(firstTmpObj.getWorkingDirectory() + ".vcs/mergetmp/branchOne/" + firstTmpObj.getName());
+								String file2Contents = readFileIntoString(secondTmpObj.getWorkingDirectory() + ".vcs/mergetmp/branchTwo/" + secondTmpObj.getName());
 								
 								//String completeFileName = searchFileInTree(commonAncestor,firstTmpObj.getName());
-								AbstractVCSTree completeFileNameObj = commonAncestor.findTreeIfExist(firstTmpObj.getName(), 0);
-								((VCSBlob)completeFileNameObj).writeOriginalToTempDir(firstTmpObj.getWorkingDirectory() + ".vcs/tmp/ancestor/" + firstTmpObj.getName());
-								String file3Contents = readFileIntoString(firstTmpObj.getWorkingDirectory() + ".vcs/tmp/ancestor/" + firstTmpObj.getName());
+								System.out.println("relative path is :  "+firstTmpObj.getRelativePath());
+								String tmpRelativePath = firstTmpObj.getRelativePath();
+								if(tmpRelativePath.charAt(0)=='/')
+								{
+									tmpRelativePath = tmpRelativePath.replaceFirst("/", "");
+								}
+								System.out.println("relative path now is :  "+tmpRelativePath);
+								AbstractVCSTree completeFileNameObj = commonAncestor.findTreeIfExist(tmpRelativePath, 0);
+								if(completeFileNameObj==null)
+								{
+									System.out.println("abs tree is null");
+								}
+								((VCSBlob)completeFileNameObj).writeOriginalToTempDir(firstTmpObj.getWorkingDirectory() + ".vcs/mergetmp/ancestor/" + firstTmpObj.getName());
+								String file3Contents = readFileIntoString(firstTmpObj.getWorkingDirectory() + ".vcs/mergetmp/ancestor/" + firstTmpObj.getName());
 								
 								Diff diff = new Diff();
-								MergeResult mr=diff.merge(file3Contents, file1Contents, file2Contents, null, false);
+								//MergeResult mr=diff.merge(file3Contents, file1Contents, file2Contents, null, false);
+								//no commit objects available ===> no branch names and no commit hashes available. So Tree hash has been used
+								String mergedString = getMergeResult(firstTmpObj.getWorkingDirectory(),file3Contents, file1Contents, file2Contents, "","", firstTmpObj.getObjectHash(), secondTmpObj.getObjectHash());
+								
+								System.out.println("===============================================================");
+								System.out.println(file1Contents);
+								System.out.println();
+								System.out.println(file2Contents);
+								System.out.println();
+								System.out.println(file3Contents);
+								System.out.println();
+								System.out.println(mergedString);
+								System.out.println("===============================================================");
+								
 								
 								//write this to blob
 								//File mergedFile = new File(firstTmpObj.getPath());
 								
-								VCSBlob mergedFile = new VCSBlob(firstTmpObj.getName(), firstTmpObj.getPath(), firstTmpObj.getWorkingDirectory());
+								String fileDir = firstTmpObj.getWorkingDirectory()+".vcs/mergetmp/"+firstTmpObj.getName();
+								System.out.println("relative path is :"+fileDir);
+								File mergedFile = new File(fileDir);
+						    	FileWriter fw = new FileWriter(mergedFile.getAbsoluteFile());
+								BufferedWriter bw = new BufferedWriter(fw);
+								bw.write(mergedString);
+								bw.close();
+
+								
+								VCSBlob mergedFileBlob = new VCSBlob(firstTmpObj.getName(), firstTmpObj.getPath(), firstTmpObj.getWorkingDirectory());
 								//add the contents of "mr.getDefaultMergedResult()" to 'mergedFile'
-								mergedVCSTree.addItem(mergedFile);
+								mergedFileBlob.setModified(true);
+								mergedFileBlob.setContentPath(fileDir);
+								mergedVCSTree.addItem(mergedFileBlob);
 								//mr.getDefaultMergedResult();
-								 * */
+								
+								
 				}
+				secondVCSTreeChildren.remove(secondTmpObj);
 			}
 			//non commmon files and directories
 			else
 			{
+				firstTmpObj.setModified(true);
 				mergedVCSTree.addItem(firstTmpObj);
 			}
 		}
+		//non common files in second branch
 		Iterator<AbstractVCSTree> secondVCSTreeIterator = secondVCSTreeChildren.iterator();
 		while(secondVCSTreeIterator.hasNext())
 		{
 			AbstractVCSTree secondTmpObj = secondVCSTreeIterator.next();
+			secondTmpObj.setModified(true);
 			mergedVCSTree.addItem(secondTmpObj);
 		}
 	}
 
+	public static String getMergeResult(String workingDirectory,String commonAncestor,String version1, String version2,String leftBranchName, String rightBranchName,String leftCommitId,String rightCommitId) throws IOException
+	{
+		String retVal=null;
+		Diff obj = new Diff();
+		MergeResult mr = obj.merge(commonAncestor, version1, version2,null, false);
+		if (!mr.isConflict()) 
+		{
+			retVal=mr.getDefaultMergedResult();
+		}
+		else
+		{
+			//put lock on operations
+			String branchDir = workingDirectory + ".vcs/conflict_file";
+			File conflict_file = new File(branchDir);
+	    	FileWriter fw = new FileWriter(conflict_file.getAbsoluteFile());
+			BufferedWriter bw = new BufferedWriter(fw);
+			bw.write("1");
+			bw.close();
 
+			StringBuilder sb=new StringBuilder();
+			int i = 0;
+			while (i < mr.getMergeItems().size()) 
+			{
+				MergeResultItem mri = mr.getMergeItems().get(i);
+				if (mri.getType() == MergeResultItem.Type.CONFLICT)
+				{
+					int j = 0;
+					sb.append("====================================");
+					sb.append(leftBranchName);
+					sb.append("          ");
+					sb.append(leftCommitId);
+					sb.append(System.lineSeparator());
+					
+					while (j < mri.getLeftVersion().size()) 
+					{
+						sb.append(mri.getLeftVersion().get(j).getContent());
+						sb.append(System.lineSeparator());
+						j++;
+					}
+					
+					sb.append(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+					sb.append(rightBranchName);
+					sb.append("          ");
+					sb.append(rightCommitId);
+					sb.append(System.lineSeparator());
+					j = 0;
+					while (j < mri.getLeftVersion().size()) 
+					{
+						sb.append(mri.getRightVersion().get(j).getContent());
+						sb.append(System.lineSeparator());
+						j++;
+					}
+					sb.append("------------------------------------");
+				}
+				else
+				{
+					int k=0,max;
+					max=mri.getLeftVersion().size();
+					while(k<max)
+					{
+						sb.append(mri.getLeftVersion().get(k));
+						sb.append(System.lineSeparator());
+						k++;
+					}
+				}
+				i++;
+			}
+			retVal=sb.toString();
+		 }
+		return retVal;
+	}
+
+	
+	
 	boolean branchExists(String workingDirectory,String branchName)
 	{
 		boolean retval = false;
@@ -872,6 +1115,13 @@ public class Operations {
 	    	VCSCommit VCSCommitObj = getBranchHead(workingDirectory, nameOfBranch);
 	    	writeHead(workingDirectory, VCSCommitObj.getObjectHash());
 	    	VCSCommitObj.getTree().writeOriginalToDisk();
+	    	
+			File head = new File(getHeadsFolder(workingDirectory) + "/currentBranch");
+			FileWriter fileWritter = new FileWriter(head, false);
+			BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
+			VCSCommit commitObj = new VCSCommit(VCSCommitObj.getObjectHash(), workingDirectory, VCSCommit.IMPORT_JUST_COMMIT);
+			bufferWritter.write(nameOfBranch);
+			bufferWritter.close();
 	    }
 
 		return retval;
@@ -919,6 +1169,33 @@ public class Operations {
 	    {
 	    	writeHead(workingDirectory, commitHash);
 	    }
+	    VCSCommit caCommitObject = new VCSCommit(commitHash, workingDirectory, VCSCommit.IMPORT_JUST_COMMIT);
+	    //String data = nameOfBranch + " " + caCommitObject.getBranchName() + " " + commitHash ;
+	    String data = null;
+		File file =new File(workingDirectory + ".vcs/commonAncestor");
+
+		//if file doesnt exists, then create it
+		boolean done = false;
+		if(!file.exists()){
+			done = file.createNewFile();
+		}
+
+		if(!done)
+		{
+			data = "\n" + nameOfBranch + " " + caCommitObject.getBranchName() + " " + commitHash ;
+		}
+		else
+		{
+			data = nameOfBranch + " " + caCommitObject.getBranchName() + " " + commitHash ;
+		}
+		
+		//true = append file
+		FileWriter fileWritter = new FileWriter(file,true);
+	        BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
+	        bufferWritter.write(data);
+	        bufferWritter.close();
+
+        System.out.println("Done");
 	    return retval;
 	}
 	
