@@ -1,5 +1,7 @@
 package objects;
 
+import logger.VCSLogger;
+
 //import java.util.Iterator;
 
 /**
@@ -33,6 +35,7 @@ public abstract class AbstractVCSTree extends VCSObject
 		super(workingDirectory);
 		this.objectHash = objectHash;
 		this.diskPath = diskPath;
+		this.diskPath = this.diskPath.replaceAll("//+", "/");
 		this.name = name;
 		this.relativePath = this.diskPath.substring(this.workingDirectory.length(), this.diskPath.length());
 	}
@@ -46,6 +49,7 @@ public abstract class AbstractVCSTree extends VCSObject
 		super(workingDirectory);
 		this.name = name;
 		this.diskPath = diskPath;
+		this.diskPath = this.diskPath.replaceAll("//+", "/");
 		this.relativePath = this.diskPath.substring(this.workingDirectory.length()-1, this.diskPath.length());
 	}
 	

@@ -81,6 +81,8 @@ public abstract class VCSObject {
 			}
 			this.objectHash = hexString.toString();
 			return this.objectHash;
+		}else{
+			System.out.println("Content empty");
 		}
 		return null;
 	}
@@ -130,11 +132,15 @@ public abstract class VCSObject {
 	        	out.close(); 
 				return true;
 			} catch (IOException e) {
-				VCSLogger.errorLogToCmd("VCSObject#writeObjectToDisk", e.toString());
+				e.printStackTrace();
+				//VCSLogger.errorLogToCmd("VCSObject#writeObjectToDisk", e.toString());
 		    }
 		}
 		return false;
 	}
+	
+	protected boolean readFromTempDir;
+	protected String readOpSourceTempDirName;
 	
 	/**
 	 * Reads and un hashes object.
@@ -143,8 +149,14 @@ public abstract class VCSObject {
 	protected String decompressObject(){
 		//System.out.println("Decompress object");
 		try{
+			String objectFile = null;
+			if(!readFromTempDir){
+				objectFile= Operations.getObjectsFolder(workingDirectory);
+			}else{
+				objectFile = workingDirectory + ".vcs/" + readOpSourceTempDirName + "/.vcs/" + Constants.OBJECTS_FOLDER;
+			}
 			
-			String objectFile = Operations.getObjectsFolder(workingDirectory) + "/" + objectHash.charAt(0) + objectHash.charAt(1) + "/" + objectHash.substring(2, objectHash.length());
+			objectFile += "/" + objectHash.charAt(0) + objectHash.charAt(1) + "/" + objectHash.substring(2, objectHash.length());
 			//System.out.println(objectFile);
 			File diskObjectFile = new File(objectFile);
         	if(diskObjectFile.exists()){
@@ -165,7 +177,8 @@ public abstract class VCSObject {
     			return builder.toString();
         	}  
 		}catch(Exception e){
-			VCSLogger.errorLogToCmd("VCSObject#decompressObject", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSObject#decompressObject", e.toString());
 	    }
 		return null;
 	}

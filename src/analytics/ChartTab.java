@@ -18,7 +18,7 @@ import javax.swing.JPanel;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.time.Week;
-
+import analytics.PieChart;
 import objects.VCSCommit;
 
 import vcs.Constants;

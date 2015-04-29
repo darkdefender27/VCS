@@ -35,6 +35,14 @@ public class VCSBlob extends AbstractVCSTree{
 		//VCSLogger.debugLogToCmd("VCSBlob#", diskPath + " blob restored");
 	}
 	
+	public VCSBlob(String objectHash,String workingDirectory,String diskPath,String name,String tmpDirName){
+		super(objectHash,workingDirectory,diskPath,name);
+		this.readFromTempDir = true;
+		this.readOpSourceTempDirName = tmpDirName;
+		this.type = "blob";
+		//VCSLogger.debugLogToCmd("VCSBlob#", diskPath + " blob restored");
+	}
+	
 	/**
 	 * Creates instance form <code>un hashed file</code> which is stored on disk.
 	 * It generates <code>SHA256</code> hash from the <code>file content<code> in the process.
@@ -48,10 +56,11 @@ public class VCSBlob extends AbstractVCSTree{
 		try {
 			hashContent(filePath);
 		} catch (NoSuchAlgorithmException e) {
-			//e.printStackTrace();
-			VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
 		} catch (IOException e) {
-			VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
 		}
 		VCSLogger.debugLogToCmd("VCSBlob#", diskPath + " blob initialised");
 	}
@@ -83,12 +92,20 @@ public class VCSBlob extends AbstractVCSTree{
 	        	File newFileCreated = new File(objectFile);
 	        	if(newFileCreated.exists()){
 				//dont write as file already in updated state
+	        		VCSLogger.debugLogToCmd("VCSBlob#writeObjectToDisk", getName() + " Blob up to date");
 	        		return true;
 	        	}
 	        	boolean fileCreated = newFileCreated.createNewFile();
 	        	if(!fileCreated) return false;
 	        	
-	        	FileInputStream fin=new FileInputStream(diskPath);  
+	        	FileInputStream fin = null;
+	        	if(mContentPath == null){
+	        		fin = new FileInputStream(diskPath);
+	        	}
+	        	else{
+	        		fin = new FileInputStream(mContentPath);
+	        		VCSLogger.debugLogToCmd("VCSCommit#writeObjectToDisk#", getName() + " Writing from diff path");
+	        	}
 	        	  
 	        	FileOutputStream fout=new FileOutputStream(objectFile);  
 	        	DeflaterOutputStream out=new DeflaterOutputStream(fout);  
@@ -104,9 +121,11 @@ public class VCSBlob extends AbstractVCSTree{
 	        	VCSLogger.debugLogToCmd("VCSBlob#writeObjectToDisk", diskPath + " blob written to disk");
 	        	return true;
 	        } catch (FileNotFoundException e) {
-	        	VCSLogger.errorLogToCmd("VCSBlob#writeObjectToDisk", e.toString());
+	        	e.printStackTrace();
+	        	//VCSLogger.errorLogToCmd("VCSBlob#writeObjectToDisk", e.toString());
 	        } catch (IOException e) {
-	        	VCSLogger.errorLogToCmd("VCSBlob#writeObjectToDisk", e.toString());
+	        	e.printStackTrace();
+	        	//VCSLogger.errorLogToCmd("VCSBlob#writeObjectToDisk", e.toString());
 		    } 
 		}
 		return false;
@@ -145,9 +164,11 @@ public class VCSBlob extends AbstractVCSTree{
 	        	return true;
         	}  
 		}catch(FileNotFoundException e){
-			VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
 	    }catch(IOException e){
-	    	VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
+	    	e.printStackTrace();
+	    	//VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
 	    }
 		return false;
 	}
@@ -198,9 +219,11 @@ public class VCSBlob extends AbstractVCSTree{
 	        	return tempPath+folder+name;
         	}  
 		}catch(FileNotFoundException e){
-			VCSLogger.errorLogToCmd("VCSBlob#writeTempFile", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#writeTempFile", e.toString());
 	    }catch(IOException e){
-	    	VCSLogger.errorLogToCmd("VCSBlob#writeTempFile", e.toString());
+	    	e.printStackTrace();
+	    	//VCSLogger.errorLogToCmd("VCSBlob#writeTempFile", e.toString());
 	    }
 		return null;
 	}
@@ -318,13 +341,26 @@ public class VCSBlob extends AbstractVCSTree{
 	        	return true;
         	}  
 		}catch(FileNotFoundException e){
-			VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
 	    }catch(IOException e){
-	    	VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
+	    	e.printStackTrace();
+	    	//VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
 	    }
 		return false;
 	}
-	
 
-	
+	private String mContentPath;
+	public void setContentPath(String path){
+		this.mContentPath = path;
+		try {
+			hashContent(path);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
+		}
+	}
 }
