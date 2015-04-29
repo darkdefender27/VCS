@@ -406,6 +406,67 @@ public class Operations {
 		}
 		return insertedDeleted;
 	}
+	
+	
+	public void doVCSDiff(VCSCommit parentCommit, String fileName, String workingDir)
+	{
+		int[] insertedDeleted=new int[2];
+		if(parentCommit!=null && parentCommit.getTree()!=null)
+		{
+			AbstractVCSTree obj=parentCommit.getTree().findTreeIfExist(fileName, 0);
+			VCSBlob b=(VCSBlob)obj;
+			String fullFileName=null;
+			FileDiffResult result=null;
+			if(b!=null)
+			{
+				//System.out.println(overallPath+"  parent commit's filename "+b.getObjectHash());
+				fullFileName=b.writeTempFile(workingDir+"/"+Constants.VCSFOLDER+"/"+Constants.TEMP_FOLDER +"/",workingDir);
+			}
+			//do diff here
+			String rightFile=readFileIntoString(workingDir+"/"+fileName);
+			if(rightFile!=null)
+			{
+				if(fullFileName!=null)
+				{
+					//System.out.println(workingDir+"/"+stagedFiles[i]+" "+fullFileName);
+					Diff diffObj=new Diff();
+					result=diffObj.diff(readFileIntoString(fullFileName),rightFile, null, false);
+					diffObj.viewResults(result, result.getLeftFile(),result.getRightFile());
+					insertedDeleted[1]+=result.getLineResult().getNoOfLinesDeleted();
+					insertedDeleted[0]+=result.getLineResult().getNoOfLinesAdded();
+					File f=new File(fullFileName);
+					f.delete();
+				}
+				else
+				{
+					Diff diffObj=new Diff();
+					result=diffObj.diff("",rightFile, null, false);
+					diffObj.viewResults(result, result.getLeftFile(),result.getRightFile());
+					result.getLineResult().setNoOfLinesDeleted(result.getLineResult().getNoOfLinesDeleted()-1);
+					insertedDeleted[1]+=result.getLineResult().getNoOfLinesDeleted();
+					insertedDeleted[0]+=result.getLineResult().getNoOfLinesAdded();
+				}
+			}
+			result=null;
+		}
+		else if(parentCommit==null)
+		{
+			Diff diffObj=new Diff();
+			String rightFile=readFileIntoString(workingDir+fileName);
+			if(rightFile!=null)
+			{
+				FileDiffResult result=diffObj.diff("",rightFile, null, false);
+				result.getLineResult().setNoOfLinesDeleted(result.getLineResult().getNoOfLinesDeleted()-1);
+				diffObj.viewResults(result, result.getLeftFile(),result.getRightFile());
+				insertedDeleted[1]+=result.getLineResult().getNoOfLinesDeleted();
+				insertedDeleted[0]+=result.getLineResult().getNoOfLinesAdded();
+				result=null;
+			}
+		}
+		VCSLogger.infoLogToCmd(insertedDeleted[0]+" lines added");
+		VCSLogger.infoLogToCmd(insertedDeleted[1]+" lines deleted");
+	}
+	
 
 	private boolean writeToDeveloperList(String committer, String workingDir) {
 		// TODO Auto-generated method stub

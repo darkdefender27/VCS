@@ -2,6 +2,8 @@ package com.diff.core;
 
 import java.util.*;
 
+import logger.VCSLogger;
+
 public class Diff {
 	
 	int unchanged=0;
@@ -72,27 +74,30 @@ public class Diff {
 	}
 	
 	
-	
-	@SuppressWarnings("unused")
-	private static void viewResults(FileDiffResult result,ParsedFile leftFile,ParsedFile rightFile)
+	public void viewResults(FileDiffResult result,ParsedFile leftFile,ParsedFile rightFile)
 	{
 		int i=0,max;
-		//result=Diff.format(result);
 		max=Math.max(result.getLeftFile().getLines().length,result.getRightFile().getLines().length);
-		//System.out.println("left length "+leftFile.getLines().length);
-		//System.out.println("right length "+rightFile.getLines().length);
 		while(i<max)
 		{
-			System.out.print((i+1)+"     ");
 			if(i<result.getLeftFile().getLines().length)
 			{
-				System.out.print("left     "+FileLine.statusToString(result.getLeftFile().getLines()[i].getStatus()));
+				if(result.getLeftFile().getLines()[i].getStatus()==FileLine.NO_MATCH  || result.getLeftFile().getLines()[i].getStatus()==FileLine.MODIFIED)
+				{
+					//deleted
+					VCSLogger.infoLogToCmd("deleted     "+result.getLeftFile().getLines()[i].getContent());
+				}
+				
 			}
 			if(i<result.getRightFile().getLines().length)
 			{
-				System.out.print("     right     "+FileLine.statusToString(result.getRightFile().getLines()[i].getStatus()));
+				if(result.getRightFile().getLines()[i].getStatus()==FileLine.NO_MATCH || result.getRightFile().getLines()[i].getStatus()==FileLine.MODIFIED)
+				{
+					//inserted
+					VCSLogger.infoLogToCmd("inserted     "+result.getRightFile().getLines()[i].getContent());
+				}
+				
 			}
-			System.out.println("");
 			i++;
 		}
 	}
