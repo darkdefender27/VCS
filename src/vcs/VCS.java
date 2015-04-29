@@ -120,15 +120,10 @@ public class VCS {
 	public static void main(String[] args)
 	{
 		String userName=null;
-		//place your cmdArgs here if required
-		
-		String cmdArgs = "log /home/rounak/final#year#project/VCS#v1.5.0/VCSDebug/";
-		//String cmdArgs = "switch /home/rounak/final#year#project/VCS#v1.5.0/VCSDebug/ branch branch1";
-		args = cmdArgs.split(" ");
 		
 		//end of cmdArgs
 		userName=getUserName();
-		args[1] = replaceHashWithSpace(args[1]);
+		//args[1] = replaceHashWithSpace(args[1]);
 		
 		boolean flag = false;
 		int argLength = args.length;
@@ -371,6 +366,7 @@ public class VCS {
 					
 				}if(args[0].equals("log") && argLength == 2){
 					//log workdir
+					System.out.println(args[0]);
 					ops.vcsCommitLog(args[1]);
 				}
 			}

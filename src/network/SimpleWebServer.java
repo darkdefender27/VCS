@@ -53,11 +53,34 @@ public class SimpleWebServer extends NanoHTTPD {
 	public Response serve(String uri, Method method,
 			Map<String, String> header, Map<String, String> parms,
 			Map<String, String> files) {
-
+		
 		String msg = "Hello";
+		
+		VCSLogger.infoLogToCmd("#SEVER SERVE COMMAND.");
+		
+		/*
+		 * RECEIVE FILE HERE
+		 * Parse the MultiPartEntities. 
+		 */
+		if(files.containsKey("attachment")){
+			
+			// .zip file representing the .zip file of the pushed repository
+			
+			String fPath = files.get("attachment");
+			VCSLogger.debugLogToCmd("ATTACHMENT", "RECEIVED FILE: " + fPath);
+			File push_receipt = new File(fPath); 
+			ops.secondPush(push_receipt);	
+			
+		}
+	
+		/*
+		 * Handle HTTP Requests
+		 * Parse URI
+		 */
 		if (uri.contains(".vcs")) {
 			uri = uri.substring(1, uri.length());
 			String request = parms.get("REQUEST");
+			VCSLogger.infoLogToCmd("REQUEST = " + request);
 			if (request != null) {
 				//Check the ?REQUEST parameter for value: CLONE	
 				if (parms.get("REQUEST").equals("CLONE")) {
