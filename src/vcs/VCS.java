@@ -131,7 +131,14 @@ public class VCS {
 		String userName=null;
 		//place your cmdArgs here if required
 		
-		
+		//String cmdArgs = "init C:/Users/Ambarish/Desktop/vcsdebug/";
+		//String cmdArgs = "add C:/Users/Ambarish/Desktop/vcsdebug/ *";
+		//String cmdArgs = "commit C:/Users/Ambarish/Desktop/vcsdebug/ master_4";
+		//String cmdArgs = "create C:/Users/Ambarish/Desktop/vcsdebug/ branch b1 a46a7d06dbbcdef2d9ab10365e634edc9a629a7c593df712017ca31c31e33";
+		//String cmdArgs ="switch C:/Users/Ambarish/Desktop/vcsdebug/ branch master";
+		//String cmdArgs ="diff C:/Users/Ambarish/Desktop/vcsdebug/ 1.txt";
+		//String cmdArgs ="show C:/Users/Ambarish/Desktop/vcsdebug/ 4cbc787d9bdee9dfa7e4324b2760bb8b23b143d38073ab8085deabcda82926d";
+		String cmdArgs ="config C:/Users/Ambarish/Desktop/vcsdebug/ config set email ambarish.v.rao@gmail.com";
 		//end of cmdArgs
 		
 		args = cmdArgs.split(" ");
