@@ -46,6 +46,8 @@ import com.diff.core.MergeResultItem;
 
 import logger.VCSLogger;
 import network.ConfigManipulation;
+import network.FileUpload;
+import network.ZipDirectory;
 import objects.AbstractVCSTree;
 import objects.VCSBlob;
 import objects.VCSCommit;
@@ -1665,7 +1667,7 @@ public class Operations {
     				//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
     				conn.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
     				conn.setRequestProperty("Accept","*/*");
-    				VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
+    				VCSLogger.debugLogToCmd("URL", "REPO URL: " + repoUrl);
     				
     				//int status = ((HttpURLConnection) conn).getResponseCode();
     				//VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
@@ -1678,10 +1680,10 @@ public class Operations {
     				getPullTempFolder(userWorkDir);
     				boolean pullTempCreated = new File(Operations.getPullTempFolder(userWorkDir)).mkdir();
     				if(pullTempCreated) {
-    					VCSLogger.infoLogToCmd("> Creatd pulltemp directory in .vcs");
+    					//VCSLogger.infoLogToCmd("> Creatd pulltemp directory in .vcs");
     				}
     				else {
-    					VCSLogger.infoLogToCmd("> Could not create pulltemp directory in .vcs");
+    					//VCSLogger.infoLogToCmd("> Could not create pulltemp directory in .vcs");
     				}
     				
     				//#!
@@ -1821,7 +1823,8 @@ public class Operations {
 			int i = 0;
 			diff = localLength-remoteLength;
 			int j = i + diff;
-			while((localLL.get(j) != null) && (remoteLL.get(i) != null )) {
+			while(j<localLL.size() && i<remoteLL.size()) {
+				//(localLL.get(j) != null) && (remoteLL.get(i) != null )
 				if(localLL.get(j).equals(remoteLL.get(i))) {
 					LCA = localLL.get(j);
 				}
@@ -1834,23 +1837,39 @@ public class Operations {
 			int i = 0;
 			diff = remoteLength-localLength;
 			int j = i + diff;
-			while((localLL.get(i) != null) && (remoteLL.get(j) != null )) {
+			while(i<localLL.size() && j<remoteLL.size()) {
+				//(localLL.get(i) != null) && (remoteLL.get(j) != null )
 				if(localLL.get(i).equals(remoteLL.get(j))) {
 					LCA = localLL.get(i);
+					VCSLogger.debugLogToCmd("NETWORK:PUSH", "LCA FOUND: " + LCA);
 				}
 				i++;
 				j++;
 			}
-		}
-		
-		if(LCA.equals(null)){
 			VCSLogger.infoLogToCmd("THE TWO BRANCHES DO NOT SHARE A COMMON ANCESTOR. HENCE, LCA: 'NULL'");
 		}
-		else {
+		
+		/*if(!LCA.equals(null)){
 			VCSLogger.debugLogToCmd("NETWORK:PUSH", "LCA FOUND: " + LCA);
 		}
+		else {
+			VCSLogger.infoLogToCmd("THE TWO BRANCHES DO NOT SHARE A COMMON ANCESTOR. HENCE, LCA: 'NULL'");
+		}*/
 		
 		return LCA;
+	}
+
+	/**
+	 * This is a method I write for merging two directories. 
+	 * The directory of second parameter will be moved to the first one, including files and directories.
+	 */
+	public static void mergeTwoDirectories(File dir1, File dir2){
+		String targetDirPath = dir1.getAbsolutePath();
+		File[] files = dir2.listFiles();
+		for (File file : files) {
+			file.renameTo(new File(targetDirPath+File.separator+file.getName()));
+			VCSLogger.debugLogToCmd("DIR:COPY:MERGE", file.getName() + " is moved!");
+		}
 	}
 	
 	/**
@@ -1915,7 +1934,7 @@ public class Operations {
 		String author = "darkDefender";
 		String LOCK_RESPONSE = "HALT";
 		try {
-			conn1 = new URL(repoUrl + "?REQUEST=PUSH"+"?AUTHOR="+author).openConnection();
+			conn1 = new URL(repoUrl + "?REQUEST=PUSH"+"&AUTHOR="+author).openConnection();
 			//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
 			conn1.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
 			conn1.setRequestProperty("Accept","*/*");
@@ -1989,15 +2008,17 @@ public class Operations {
 			LinkedList<VCSCommit> remoteLL = new LinkedList<VCSCommit>();
 			
 			VCSCommit localparentObj = localObject;
-			while(localparentObj!=null) {	
-				localLL.add(localparentObj);
+			localLL.add(localparentObj);
+			while(!localparentObj.getParentCommits().isEmpty()) {
 				localparentObj=localparentObj.getParentCommits().get(0);
+				localLL.add(localparentObj);
 			}
 			
 			VCSCommit remoteparentObj = remoteObject;
-			while(remoteparentObj!=null) {	
-				remoteLL.add(remoteparentObj);
+			remoteLL.add(remoteparentObj);
+			while(!remoteparentObj.getParentCommits().isEmpty()) {
 				remoteparentObj=remoteparentObj.getParentCommits().get(0);
+				remoteLL.add(remoteparentObj);
 			}
 			
 			VCSCommit LCA = getLCA(localLL, remoteLL);
@@ -2027,13 +2048,36 @@ public class Operations {
 				}
 			}
 			
+			VCSLogger.infoLogToCmd("Moving further... WRITING FINAL ELEMS...");
+			
 			ArrayList<VCSCommit> finalElements = new ArrayList<VCSCommit>();
 			while(!writeElems.empty()) {
 				finalElements.add(writeElems.pop());
 			}
 			
+			/*
+			 * MERGE TWO DIRECTORIES' OBJECTS (objectfinalElements are merged)
+			 */
+			String sourceDir1Path = workingDir + ".vcs/objects/";
+			String sourceDir2Path = workingDir + ".vcs/pulltemp/.vcs/objects/";
+	 
+			File dir1 = new File(sourceDir1Path);
+			File dir2 = new File(sourceDir2Path);
+	 
+			mergeTwoDirectories(dir1, dir2);
+
+			
 			for(VCSCommit de : finalElements){
-				if(de.getTree().writeOriginalToDisk()) {
+				
+				/*String sourceDir1Path = workingDir + ".vcs/objects/";
+				String sourceDir2Path = "/home/programcreek/Desktop/d2";
+		 
+				File dir1 = new File(sourceDir1Path);
+				File dir2 = new File(sourceDir2Path);
+		 
+				mergeTwoDirectories(dir1, dir2);*/
+				
+				/*if(de.getTree().writeOriginalToDisk()) {
 					VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITEORIGINALSTODISKS", "NEW ELEMENTS FROM REMOTE WRITTEN SUCCESSFULLY TO DISK.");
 				}
 				else {
@@ -2044,14 +2088,23 @@ public class Operations {
 				}
 				else {
 					VCSLogger.debugLogToCmd("NETWORK:PUSH:WRITECOMMITSTODISKS", "#! NEW ELEMENTS FROM REMOTE WRITE FAILURE TO DISK.");
-				}
+				}*/
+				VCSLogger.debugLogToCmd("PUSH:OBJECTWRITES","WRITE these to DISK: " + de.getObjectHash());
 			}
 			
 			/*
-			 * MERGE(localObject, remoteObject, LCA)
+			 * MERGE(localObject, remoteObject, LCA) if LCA is non NULL
 			 */
-			VCSTree mergedVCSTree = null;
-			mergeTree(localObject.getTree(), remoteObject.getTree(), mergedVCSTree, LCA.getTree());
+
+			mergeBranch(workingDir, localObject.getObjectHash(), remoteObject.getObjectHash(), LCA.getObjectHash());
+			VCSLogger.infoLogToCmd("MERGE SUCCESSFUL... Connecting AGAIN-");
+			
+			/*
+			 *  1st push
+			 *  if conflict wait (merge)
+			 *  commit (Resolve Conflicts)
+			 *  push 2nd time push
+			 */
 			
 			/*
 			 * UPDATE INFORMATION OBTAINED AFTER MERGE
@@ -2062,30 +2115,37 @@ public class Operations {
 			
 			
 			/*
-			 * PUSH FINAL CHANGES TO SERVER
+			 * Compress the current direcctory & PUSH FINAL CHANGES TO SERVER.
+			 * Here, Apache HttpClient library is used.
 			 */
 			
-			URLConnection conn2;
 			
-		//#!#!#!#!#!#!#! 	SEND DATA TO THE SERVER: NANO?
-			
-			try {
-				conn2 = new URL(repoUrl + "?REQUEST=PUSH").openConnection();
-				//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
-				conn2.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
-				conn2.setRequestProperty("Accept","*/*");
-				VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
-				
-				//String fileNameWithExtn = repoUrl.substring( repoUrl.lastIndexOf('/')+1, repoUrl.length() );
-				//String fileNameWithoutExtn = fileNameWithExtn.substring(0, fileNameWithExtn.lastIndexOf('.'));			
+			if(!userWorkDir.equals(null)) {
+	    		
+	    		File directoryToZip = new File(userWorkDir);
+	    		List<File> fileList = new ArrayList<File>();
 
-				//InputStream response = conn.getInputStream();
-				int status = ((HttpURLConnection) conn2).getResponseCode();
-				VCSLogger.infoLogToCmd("CONN COMPLETE -- HTTP STATUS RECEIVED: " + status);
-			}
-			catch(Exception e) {
-				VCSLogger.debugLogToCmd("PUSH:HTTPCONN", "FAILED TO CONNECT TO SERVER.");
-			}
+	    		ZipDirectory.getAllFiles(directoryToZip, fileList);
+	    		ZipDirectory.writeZipFile(directoryToZip, fileList); //Writes to the working directory
+	    		VCSLogger.infoLogToCmd("---Done");
+	    	}
+	    	else {
+	    		VCSLogger.infoLogToCmd("The repositiory is Empty or not instantiated on this local machine.");
+	    	}
+	    	
+	    	String party[] = userWorkDir.split("/");
+	    	String fname = userWorkDir + "/" + party[(party.length)-1] + ".zip";
+	    	VCSLogger.debugLogToCmd("PUSHZIP", "ZIP FILE TO BE PUSHED: " + fname);
+	    	
+	    	
+			FileUpload fUpload = new FileUpload();
+			
+			File file = new File (fname) ;
+			//repoUrl required format: 127.0.0.1:8009
+	        String response = fUpload.executeMultiPartRequest("http://127.0.0.1:8009", file, file.getName(), "File Upload proceeding...") ;
+	        System.out.println("Response received : " + response);
+			
+			
 		}//~LOCK_RESPONSE == PROCEED
 		else {
 			VCSLogger.infoLogToCmd("A LOCK EXISTS ON THE REMOTE LOCATION. PLEASE WAIT...");
@@ -2094,6 +2154,7 @@ public class Operations {
 		
 		return null;
 	}
+
 
 	public void vcsStatus(String workDir) {
 		try {

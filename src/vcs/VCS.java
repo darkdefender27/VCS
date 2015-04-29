@@ -129,7 +129,11 @@ public class VCS {
 
 	public static void main(String[] args)
 	{
-		String userName = getUserName();
+		String userName=null;
+		
+		//end of cmdArgs
+		userName=getUserName();
+		//args[1] = replaceHashWithSpace(args[1]);
 		
 		boolean flag = false;
 		int argLength = args.length;
@@ -159,7 +163,7 @@ public class VCS {
 					//clone http://ip:port/repoName.vcs /home/../somePathOnLocalMachine/
 					ops.clone(args[1],args[2]);
 				}
-				if (args[0].equals("pull") && argLength == 2){
+				if (args[0].equals("fetch") && argLength == 2){
 					//pull origin i.e. "vcs pull remote_handle_name"
 					ops.pull(args[1]);
 				}
@@ -173,7 +177,6 @@ public class VCS {
 					}
 				}
 				
-				//~~
 			
 				if(args[0].equals("init") && argLength == 2){
 					//init workDir
@@ -409,6 +412,7 @@ public class VCS {
 					
 				}if(args[0].equals("log") && argLength == 2){
 					//log workdir
+					System.out.println(args[0]);
 					ops.vcsCommitLog(args[1]);
 				}
 				if(args[0].equals("diff") &&  argLength==3)

@@ -1,9 +1,15 @@
 package network;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -15,6 +21,104 @@ import vcs.Constants;
 import logger.VCSLogger;
 
 public class NetworkOps {
+	
+	/**
+	 * This is a method I write for merging two directories. 
+	 * The directory of second parameter will be moved to the first one, including files and directories.
+	 */
+	public static void mergeTwoDirectories(File dir1, File dir2){
+		String targetDirPath = dir1.getAbsolutePath();
+		File[] files = dir2.listFiles();
+		for (File file : files) {
+			file.renameTo(new File(targetDirPath+File.separator+file.getName()));
+			VCSLogger.debugLogToCmd("DIR:COPY:MERGE", file.getName() + " is moved!");
+		}
+	}
+	
+	public String secondPush(File push_receipt) {
+		
+		String msg = null;
+		
+		//Unzip push_receipt in the current working directory.
+		
+		String userHomeDir = System.getProperty("user.home");
+		String userWorkDir = System.getProperty("user.dir");
+		
+		// create a directory with name to which the contents will be extracted.
+		String zipPath = userHomeDir + File.separator + "push_receipt";
+		File temp = new File(zipPath);
+		temp.mkdir();
+		
+		ZipFile zipFile = null;
+		
+
+		try {
+			// FILE TO BE ZIPPED.
+			zipFile = new ZipFile(push_receipt); 
+			
+			// get an enumeration of the ZIP file entries
+			Enumeration<?> e = zipFile.entries();
+			
+			while (e.hasMoreElements()) {
+				
+				ZipEntry entry = (ZipEntry) e.nextElement();
+				
+				File destinationPath = new File(zipPath, entry.getName());
+				 
+				//create parent directories
+				destinationPath.getParentFile().mkdirs();
+				
+				// if the entry is a file extract it
+				if (entry.isDirectory()) {
+					continue;
+				}
+				else {
+					
+					System.out.println("Extracting file: " + destinationPath);
+					
+					BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
+
+					int b;
+					byte buffer[] = new byte[1024];
+
+					FileOutputStream fos = new FileOutputStream(destinationPath);
+					
+					BufferedOutputStream bos = new BufferedOutputStream(fos, 1024);
+
+					while ((b = bis.read(buffer, 0, 1024)) != -1) {
+						bos.write(buffer, 0, b);
+					}
+					
+					bos.close();
+					bis.close();	
+				}
+			}
+			//VCSLogger.infoLogToCmd("Succesful PUSH_UNZIP operation. CHECK CONTENTS IN PUSH_RECEIPT.");
+			zipFile.close();
+			msg = "SUCCESSFUL PUSH...";
+		}
+		catch (IOException ioe) {
+			msg = "FILE CORRUPT: PUSH_RECEIPT!";
+			VCSLogger.errorLogToCmd("ZIPOPENERROR", "Error opening zip file: " + ioe);
+		}
+		
+		
+		/*
+		 * MERGE THE TWO DIRS.
+		 */
+		
+		String sourceDir1Path = userWorkDir;
+		String sourceDir2Path = userHomeDir + File.separator + "push_receipt"; //CHECK CONTENTS IN PUSH RECEIPT>
+ 
+		File dir1 = new File(sourceDir1Path);
+		File dir2 = new File(sourceDir2Path);
+ 
+		mergeTwoDirectories(dir1, dir2);
+
+		
+		
+		return msg;
+	}
 	
 	public File pushRepository(String repoName, String authorName) {
 		
