@@ -132,7 +132,8 @@ public abstract class VCSObject {
 	        	out.close(); 
 				return true;
 			} catch (IOException e) {
-				VCSLogger.errorLogToCmd("VCSObject#writeObjectToDisk", e.toString());
+				e.printStackTrace();
+				//VCSLogger.errorLogToCmd("VCSObject#writeObjectToDisk", e.toString());
 		    }
 		}
 		return false;
@@ -176,7 +177,8 @@ public abstract class VCSObject {
     			return builder.toString();
         	}  
 		}catch(Exception e){
-			VCSLogger.errorLogToCmd("VCSObject#decompressObject", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSObject#decompressObject", e.toString());
 	    }
 		return null;
 	}

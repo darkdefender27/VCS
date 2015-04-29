@@ -121,8 +121,8 @@ public class VCSCommit extends VCSObject
 		}
 		catch (NoSuchAlgorithmException | IOException e) 
 		{
-			//TODO Auto-generated catch block
-			VCSLogger.errorLogToCmd("VCSCommit#", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSCommit#", e.toString());
 	    }
 		VCSLogger.debugLogToCmd("VCSCommit#", "commit initialised");
 	}
@@ -135,8 +135,8 @@ public class VCSCommit extends VCSObject
 		}
 		catch (NoSuchAlgorithmException | IOException e) 
 		{
-			//TODO Auto-generated catch block
-			VCSLogger.errorLogToCmd("VCSCommit#", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSCommit#", e.toString());
 	    }
 	}
 	public VCSCommit(String objectHash,String workingDirectory,int importFlag){
