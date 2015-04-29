@@ -12,12 +12,15 @@ import java.util.Iterator;
 import java.util.Scanner;
 import logger.VCSLogger;
 import objects.AbstractVCSTree;
+import objects.VCSBlob;
 import objects.VCSCommit;
+import objects.VCSObject;
 import network.NetworkOps;
 import network.SimpleWebServer;
 
 public class VCS {
 	
+	private static String emailID=null;
 	///compare hashes for changed files
 	private static void listAllFiles(String directoryName, ArrayList<String> files,String initialWorkingDir) 
 	{
@@ -53,6 +56,7 @@ public class VCS {
 		String retVal=null;
 		String homeDir=System.getProperty("user.home").replace("\\", "/");
 		File f=new File(homeDir+"/" +Constants.CONFIG_FILE);
+		String line;
 		if(f.exists())
 		{
 			try 
@@ -70,6 +74,13 @@ public class VCS {
 							{
 								retVal=retVal.split("=")[1];
 								retVal=retVal.replace(" ", "");
+								line=br.readLine();
+								if(line.contains("email"))
+								{
+									line=line.split("=")[1];
+									line=line.replace(" ", "");
+									emailID=line;
+								}
 								done=true;
 							}
 						}
@@ -87,7 +98,6 @@ public class VCS {
 		}
 		else
 		{
-			System.out.println("here");
 			try 
 			{
 				boolean created=f.createNewFile();
@@ -233,24 +243,43 @@ public class VCS {
 				    	    VCSLogger.infoLogToCmd(stagedFile+" added to staging area");
 						}
 			    	}catch(IOException e){
-			    		VCSLogger.errorLogToCmd("VCS#Main#add", e.toString());
+			    		e.printStackTrace();
+			    		//VCSLogger.errorLogToCmd("VCS#Main#add", e.toString());
 			    	}
 				}
-				if(args[0].equals("checkout") && argLength == 3){
-					//checkout workDir hash
-					String workingDir = replaceHashWithSpace(args[1]);
-					String commitHash = args[2];
-					VCSCommit commit = new VCSCommit(commitHash, workingDir, VCSCommit.IMPORT_TREE);
-					boolean status = true;
-					Iterator<AbstractVCSTree> it = commit.getTree().getImmediateChildren().listIterator();
-					//VCSLogger.debugLogToCmd("VCS#MAIN#checkout",commit.getTree().printTree(0));
-					//VCSLogger.debugLogToCmd("VCS#MAIN#checkout", "Tree Printed");
-					while(it.hasNext())
-					{
-						status = (it.next()).writeOriginalToDisk();
-						if(!status) break;
+				if(args[0].equals("checkout")){
+					//checkout workDir -b name
+					//checkout workDir -f relativePath(src/1.txt) commitHash
+					VCSCommit commit = null;
+					boolean status = false;
+					if(args[2].equals("-b") && argLength == 4){
+						//branch
+						try {
+							commit = ops.getBranchHead(args[1], args[3], VCSCommit.IMPORT_TREE);
+							Iterator<AbstractVCSTree> it = commit.getTree().getImmediateChildren().listIterator();
+							while(it.hasNext())
+							{
+								status = (it.next()).writeOriginalToDisk();
+								if(!status) break;
+							}
+						} catch (IOException e) {
+							e.printStackTrace();
+							//VCSLogger.errorLogToCmd("VCS#Main#checkout", e.toString());
+						}
+					}else if(args[2].equals("-f") && argLength == 5){
+						//file
+						args[3] = args[3].replaceFirst("^/+", "");
+						commit = new VCSCommit(args[4], args[1], VCSCommit.IMPORT_TREE);
+						AbstractVCSTree file = commit.getTree().findTreeIfExist(args[3], 0);
+						status = ((VCSBlob)file).writeOriginalToDisk();
+					}else{
+						VCSLogger.infoLogToCmd("No such option exist");
 					}
 					if(status) VCSLogger.infoLogToCmd("Successfully checked out");
+				}
+				if(args[0].equals("status") && argLength == 2){
+					//status workDir
+					ops.vcsStatus(args[1]);
 				}
 				if(args[0].equals("commit") && argLength == 3){
 					//commit workDir message
@@ -282,7 +311,8 @@ public class VCS {
 						} 
 						catch (IOException e) 
 						{
-							VCSLogger.errorLogToCmd("VCS#Main#commit", e.toString());
+							e.printStackTrace();
+							//VCSLogger.errorLogToCmd("VCS#Main#commit", e.toString());
 						}
 						finally 
 						{
@@ -290,8 +320,8 @@ public class VCS {
 							{
 								if (br != null)br.close();
 							} catch (IOException ex) {
-								//ex.printStackTrace();
-								VCSLogger.errorLogToCmd("VCS#Main#commit", ex.toString());
+								ex.printStackTrace();
+								//VCSLogger.errorLogToCmd("VCS#Main#commit", ex.toString());
 							}
 						}
 					}
@@ -299,10 +329,10 @@ public class VCS {
 						VCSLogger.infoLogToCmd("No files staged to commit");
 					}
 				}
-				if(args[0].equals("create") && args[2].equals("branch") && argLength == 5)
+				if(args[0].equals("create") && args[2].equals("branch") && argLength == 4)
 				{
+					//create workDir branch name
 					String branchName = args[3];
-					String commitHash = args[4];
 					String workingDir=replaceHashWithSpace(args[1]);
 					try {
 						if(workingDir.contains("\\"))
@@ -311,7 +341,7 @@ public class VCS {
 							System.out.println("create section " +workingDir);
 						}
 						System.out.println("create section " +workingDir);
-						flag = ops.createBranch(branchName,commitHash,workingDir);
+						flag = ops.createBranch(branchName,workingDir);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -324,6 +354,7 @@ public class VCS {
 				}
 				if(args[0].equals("switch") && args[2].equals("branch") && argLength == 4)
 				{
+					//switch workDir branch name
 					String branchName = args[3];
 					try {
 						String workDir = replaceHashWithSpace(args[1]);
@@ -336,8 +367,24 @@ public class VCS {
 						System.out.println("Branch switched successfully");
 					}
 				}
+				if(args[0].equals("branch") && argLength == 2)
+				{
+					//branch workDir
+					try {
+						ops.branch(args[1]);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				if(args[0].equals("clean") && argLength == 2)
+				{
+					//clean workingDir
+					ops.clean(args[1]);
+				}
 				if(args[0].equals("merge") && args[1].equals("branch") && argLength == 5)
 				{
+					//merge branch workDir b1 b2
 					String firstBranchName = args[3];
 					String secondBranchName = args[4];
 					try {
@@ -367,6 +414,69 @@ public class VCS {
 					//log workdir
 					System.out.println(args[0]);
 					ops.vcsCommitLog(args[1]);
+				}
+				if(args[0].equals("diff") &&  argLength==3)
+				{
+					//diff workDir name
+					String workingDir=args[1];
+					String fileName=args[2];
+					try 
+					{
+						VCSCommit parent=ops.getHead(workingDir);
+						ops.doVCSDiff(parent, fileName, workingDir);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				if(args[0].equals("show") && argLength==3)
+				{
+					//show workDir id
+					String workingDir=args[1];
+					String id=args[2];
+					String retVal=VCSObject.returnObject(id,workingDir);
+					VCSLogger.infoLogToCmd(retVal);
+					
+				}
+				if(args[0].equals("config") && argLength==6)
+				{
+					String workingDir=args[1];
+					String name=args[5];
+					String homeDir=System.getProperty("user.home").replace("\\", "/");
+					File f=new File(homeDir+"/" +Constants.CONFIG_FILE);
+					BufferedWriter bw;
+					try 
+					{
+						bw = new BufferedWriter(new FileWriter(f));
+						bw.write("[user]");
+						bw.append("\n");
+						bw.append("\t");
+						bw.append("name=");
+						if(args[4].equals("name"))
+						{
+							bw.append(name);
+						}
+						else
+						{
+							bw.append(userName);
+						}
+						bw.append("\n");
+						bw.append("\t");
+						bw.append("email=");
+						if(args[4].equals("email"))
+						{
+							bw.append(name);
+						}
+						else
+						{
+							bw.append(emailID);
+						}
+						bw.close();
+						VCSLogger.infoLogToCmd("Operation completed successfully");
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 		}

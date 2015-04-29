@@ -7,7 +7,7 @@ then
 _workingDir=$(pwd)
 _workingDir="$_workingDir/"
 	
-_jarPath="/bin/vcs.jar"
+_jarPath="/bin/1vcs.jar"
 _runJar="java -jar $_jarPath"
 
 	#init bare repository
@@ -33,22 +33,175 @@ _runJar="java -jar $_jarPath"
 	then
 		if [ $_noOfArgs -eq 2 ]
 		then
-		$_runJar $1 $_workingDir $USER $2
+		$_runJar $1 $_workingDir $2
 		else
 		echo "Message expected : vcs commit [message]"
 		fi
 	fi
 
-	#checkout
-	if [ $1 = "checkout" ]
+	#log
+	if [ $1 = "log" ]
+	then
+		if [ $_noOfArgs -eq 1 ]
+		then
+		$_runJar $1 $_workingDir
+		else
+		echo "Message expected : vcs log"
+		fi
+	fi
+	
+	#status
+	if [ $1 = "status" ]
+	then
+		if [ $_noOfArgs -eq 1 ]
+		then
+		$_runJar $1 $_workingDir
+		else
+		echo "Message expected : vcs status"
+		fi
+	fi
+	
+	#create branch
+	if [ $1 = "create" ]
+	then
+		if [ $2 = "branch"]
+		then 
+			if [ $_noOfArgs -eq 3 ]
+			then
+				$_runJar $1 $_workingDir $2 $3
+			else
+				echo "Message expected : vcs create branch name"
+			fi
+		fi
+	fi
+	
+	#switch
+	if [ $1 = "switch" ]
+	then
+		if [ $2 = "branch"]
+		then 
+			if [ $_noOfArgs -eq 3 ]
+			then
+				$_runJar $1 $_workingDir $2 $3
+			else
+				echo "Message expected : vcs switch branch name"
+			fi
+		fi
+	fi
+	
+	#merge branch
+	if [ $1 = "merge" ]
+	then
+		if [ $2 = "branch"]
+		then 
+			if [ $_noOfArgs -eq 4 ]
+			then
+				$_runJar $1 $2 $_workingDir $3 $4
+			else
+				echo "Message expected : vcs merge branch b1 b2"
+			fi
+		fi
+	fi
+
+	#branch
+	if [ $1 = "branch" ]
+	then
+		if [ $_noOfArgs -eq 1 ]
+		then
+		$_runJar $1 $_workingDir
+		else
+		echo "Message expected : vcs branch"
+		fi
+	fi
+	
+	#clean
+	if [ $1 = "clean" ]
+	then
+		if [ $_noOfArgs -eq 1 ]
+		then
+		$_runJar $1 $_workingDir
+		else
+		echo "Message expected : vcs clean"
+		fi
+	fi
+	
+	#diff
+	if [ $1 = "diff" ]
 	then
 		if [ $_noOfArgs -eq 2 ]
 		then
 		$_runJar $1 $_workingDir $2
 		else
-		echo "commit/branch expected : vcs add [commit/branch]"
+		echo "Message expected : vcs diff filename"
 		fi
 	fi
+	
+	#show
+	if [ $1 = "show" ]
+	then
+		if [ $_noOfArgs -eq 2 ]
+		then
+		$_runJar $1 $_workingDir $2
+		else
+		echo "Message expected : vcs show objectId"
+		fi
+	fi
+	
+	#checkout
+	if [ $1 = "checkout" ]
+	then
+		if [ $_noOfArgs -eq 3 ]
+		then
+		$_runJar $1 $_workingDir $2 $3
+		else
+		echo "format expected : vcs checkout Options: -b [branch]  | -f [relativeFilePath] [commit]"
+		fi
+	fi
+
+	#start-server
+	if [ $1 = "start-server" ]
+	then
+		if [ $_noOfArgs -eq 3 ]
+		then
+		$_runJar $1 $2 $3
+		else
+		echo "format expected : start-server ip_address port_number"
+		fi
+	fi
+
+	#clone
+	if [ $1 = "clone" ]
+	then
+		if [ $_noOfArgs -eq 3 ]
+		then
+		$_runJar $1 $2 $3
+		else
+		echo "format expected : clone http://ip_address:port/repoName.vcs/ /home/../AnyLocalDir/"
+		fi
+	fi
+
+	#push
+	if [ $1 = "push" ]
+	then
+		if [ $_noOfArgs -eq 3 ]
+		then
+		$_runJar $1 $2 $3
+		else
+		echo "format expected : push remote_handle_name target_branch_name"
+		fi
+	fi
+
+	#fetch
+	if [ $1 = "fetch" ]
+	then
+		if [ $_noOfArgs -eq 2 ]
+		then
+		$_runJar $1 $2
+		else
+		echo "format expected : fetch remote_handle_name"
+		fi
+	fi
+
 
 else
 echo "Atleast one argument expected : vcs [arg1] [arg2] .."

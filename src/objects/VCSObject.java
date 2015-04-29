@@ -132,7 +132,8 @@ public abstract class VCSObject {
 	        	out.close(); 
 				return true;
 			} catch (IOException e) {
-				VCSLogger.errorLogToCmd("VCSObject#writeObjectToDisk", e.toString());
+				e.printStackTrace();
+				//VCSLogger.errorLogToCmd("VCSObject#writeObjectToDisk", e.toString());
 		    }
 		}
 		return false;
@@ -176,7 +177,39 @@ public abstract class VCSObject {
     			return builder.toString();
         	}  
 		}catch(Exception e){
-			VCSLogger.errorLogToCmd("VCSObject#decompressObject", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSObject#decompressObject", e.toString());
+	    }
+		return null;
+	}
+	
+	
+	public static String returnObject(String id,String workingDir)
+	{
+		//System.out.println("Decompress object");
+		try{
+			
+			String objectFile = Operations.getObjectsFolder(workingDir) + "/" + id.charAt(0) + id.charAt(1) + "/" + id.substring(2, id.length());
+			System.out.println(objectFile);
+			File diskObjectFile = new File(objectFile);
+        	if(diskObjectFile.exists()){
+        		FileInputStream fin=new FileInputStream(objectFile);  
+    			InflaterInputStream in=new InflaterInputStream(fin);
+    			
+    			StringBuilder builder = new StringBuilder();
+    			int i;
+    			byte[] contentBytes = new byte[1];
+    			while((i=in.read())!=-1){
+    				contentBytes[0] = (byte)i; 
+    				builder.append(new String(contentBytes, "UTF-8"));
+    				//System.out.print((byte)i);
+    			}
+    			fin.close();
+    			in.close();
+    			return builder.toString();
+        	}  
+		}catch(Exception e){
+			e.printStackTrace();
 	    }
 		return null;
 	}

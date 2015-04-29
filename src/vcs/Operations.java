@@ -51,6 +51,7 @@ import network.ZipDirectory;
 import objects.AbstractVCSTree;
 import objects.VCSBlob;
 import objects.VCSCommit;
+import objects.VCSObject;
 import objects.VCSTree;
 import vcs.Constants;
 //import network.HashUtil;
@@ -318,7 +319,8 @@ public class Operations {
 			StringBuilder overallPath = new StringBuilder();
 			String[] path = stagedFiles[i].split("/");
 			overallPath.append(workingDir);
-			System.out.println("overall path" +overallPath);
+			VCSLogger.debugLogToCmd("overall path", overallPath.toString());
+			//System.out.println("overall path" +overallPath);
 				for(int j=0;j<path.length;j++)
 				{
 					if(j != 0)
@@ -447,6 +449,67 @@ public class Operations {
 		}
 		return insertedDeleted;
 	}
+	
+	
+	public void doVCSDiff(VCSCommit parentCommit, String fileName, String workingDir)
+	{
+		int[] insertedDeleted=new int[2];
+		if(parentCommit!=null && parentCommit.getTree()!=null)
+		{
+			AbstractVCSTree obj=parentCommit.getTree().findTreeIfExist(fileName, 0);
+			VCSBlob b=(VCSBlob)obj;
+			String fullFileName=null;
+			FileDiffResult result=null;
+			if(b!=null)
+			{
+				//System.out.println(overallPath+"  parent commit's filename "+b.getObjectHash());
+				fullFileName=b.writeTempFile(workingDir+"/"+Constants.VCSFOLDER+"/"+Constants.TEMP_FOLDER +"/",workingDir);
+			}
+			//do diff here
+			String rightFile=readFileIntoString(workingDir+"/"+fileName);
+			if(rightFile!=null)
+			{
+				if(fullFileName!=null)
+				{
+					//System.out.println(workingDir+"/"+stagedFiles[i]+" "+fullFileName);
+					Diff diffObj=new Diff();
+					result=diffObj.diff(readFileIntoString(fullFileName),rightFile, null, false);
+					diffObj.viewResults(result, result.getLeftFile(),result.getRightFile());
+					insertedDeleted[1]+=result.getLineResult().getNoOfLinesDeleted();
+					insertedDeleted[0]+=result.getLineResult().getNoOfLinesAdded();
+					File f=new File(fullFileName);
+					f.delete();
+				}
+				else
+				{
+					Diff diffObj=new Diff();
+					result=diffObj.diff("",rightFile, null, false);
+					diffObj.viewResults(result, result.getLeftFile(),result.getRightFile());
+					result.getLineResult().setNoOfLinesDeleted(result.getLineResult().getNoOfLinesDeleted()-1);
+					insertedDeleted[1]+=result.getLineResult().getNoOfLinesDeleted();
+					insertedDeleted[0]+=result.getLineResult().getNoOfLinesAdded();
+				}
+			}
+			result=null;
+		}
+		else if(parentCommit==null)
+		{
+			Diff diffObj=new Diff();
+			String rightFile=readFileIntoString(workingDir+fileName);
+			if(rightFile!=null)
+			{
+				FileDiffResult result=diffObj.diff("",rightFile, null, false);
+				result.getLineResult().setNoOfLinesDeleted(result.getLineResult().getNoOfLinesDeleted()-1);
+				diffObj.viewResults(result, result.getLeftFile(),result.getRightFile());
+				insertedDeleted[1]+=result.getLineResult().getNoOfLinesDeleted();
+				insertedDeleted[0]+=result.getLineResult().getNoOfLinesAdded();
+				result=null;
+			}
+		}
+		VCSLogger.infoLogToCmd(insertedDeleted[0]+" lines added");
+		VCSLogger.infoLogToCmd(insertedDeleted[1]+" lines deleted");
+	}
+	
 
 	private boolean writeToDeveloperList(String committer, String workingDir) {
 		// TODO Auto-generated method stub
@@ -1142,11 +1205,14 @@ public class Operations {
 
 		return retval;
 	}
-	boolean createBranch(String nameOfBranch,String commitHash,String workingDirectory) throws IOException
+	boolean createBranch(String nameOfBranch,String workingDirectory) throws IOException
 	{
 		//String workingDirectory = "/home/rounak/final year project/VCS v1.5.0/VCSDebug/";
 		//String branchDir = "/home/rounak/final year project/VCS v1.5.0/VCSDebug/.vcs/branches";
 		String branchDir = workingDirectory + ".vcs/branches";
+		
+		VCSCommit headCommit = getHead(workingDirectory);
+		String commitHash = headCommit.getObjectHash();
 		
 		System.out.println("create branch dir "+branchDir);
 		
@@ -1215,6 +1281,56 @@ public class Operations {
 	    return retval;
 	}
 	
+	public void branch(String workingDirectory) throws IOException
+	{
+		BufferedReader br = null;
+		String sCurrentBranch = null;
+		File currentBranch = new File(getHeadsFolder(workingDirectory) + "/currentBranch");
+		String sCurrentLine;
+		if (currentBranch.exists()) {
+			br = new BufferedReader(new FileReader(getHeadsFolder(workingDirectory)+ "/currentBranch"));
+			while ((sCurrentLine = br.readLine()) != null) {
+				sCurrentBranch = sCurrentLine;
+			}
+			br.close();
+		}
+
+		
+		ArrayList<String> files = new ArrayList<String>();
+		listAllFiles(workingDirectory+".vcs/branches/", files, workingDirectory+".vcs/branches/");
+		for(int i=0;i<files.size();i++)
+		{
+			if(files.get(i).equals(sCurrentBranch))
+			{
+				System.out.println(files.get(i)+"*");
+			}
+			else
+			{
+					System.out.println(files.get(i));
+			}
+		}
+		
+	}
+	public void clean(String workingDir)
+	{
+		VCSCommit commit;
+		try {
+			commit = getHead(workingDir);
+			boolean status = true;
+			Iterator<AbstractVCSTree> it = commit.getTree().getImmediateChildren().listIterator();
+			//VCSLogger.debugLogToCmd("VCS#MAIN#checkout",commit.getTree().printTree(0));
+			//VCSLogger.debugLogToCmd("VCS#MAIN#checkout", "Tree Printed");
+			while(it.hasNext())
+			{
+				status = (it.next()).writeOriginalToDisk();
+				if(!status) break;
+			}
+			if(status) VCSLogger.infoLogToCmd("Successfully Cleaned");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	private void listAllFiles(String directoryName, ArrayList<String> files,String initialWorkingDir) {
 	    File directory = new File(directoryName);
 
@@ -2041,5 +2157,42 @@ public class Operations {
 		
 		return null;
 	}
-}
 
+
+	public void vcsStatus(String workDir) {
+		try {
+			StringBuilder untrackedFiles = new StringBuilder();
+			StringBuilder modifiedFiles = new StringBuilder();
+			VCSCommit headCommit = getHead(workDir);
+			ArrayList<String> files = new ArrayList<String>();
+			listAllFiles(workDir, files, workDir);
+			VCSTree headTree = headCommit.getTree();
+			VCSBlob tempBlob = null;
+			for(String filename : files){
+				AbstractVCSTree fileTree = headTree.findTreeIfExist(filename, 0);
+				if(fileTree == null){
+					untrackedFiles.append("\t");
+					untrackedFiles.append(filename);
+					untrackedFiles.append("\n");
+				}else{
+					tempBlob = new VCSBlob("Temp", workDir + filename, workDir);
+					if(tempBlob != null){
+						if(!fileTree.getObjectHash().equals(tempBlob.getObjectHash())){
+							modifiedFiles.append("\t");
+							modifiedFiles.append(filename);
+							modifiedFiles.append("\n");
+						}
+					}
+				}
+			}
+			StringBuilder result = new StringBuilder();
+			result.append("\nModified Files:\n");
+			result.append(modifiedFiles);
+			result.append("Untracked Files:\n");
+			result.append(untrackedFiles);
+			VCSLogger.infoLogToCmd(result.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}

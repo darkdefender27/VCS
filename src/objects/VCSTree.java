@@ -73,13 +73,13 @@ public class VCSTree extends AbstractVCSTree{
 		}
 		catch (NoSuchAlgorithmException e) 
 		{
-			// TODO Auto-generated catch block
-			VCSLogger.errorLogToCmd("VCSTree#generateTreeHash", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSTree#generateTreeHash", e.toString());
 	    }
 		catch (IOException e) 
 		{
-			// TODO Auto-generated catch block
-	    	VCSLogger.errorLogToCmd("VCSTree#generateTreeHash", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSTree#generateTreeHash", e.toString());
 		}
 		return null;
 	}
