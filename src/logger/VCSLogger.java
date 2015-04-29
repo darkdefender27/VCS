@@ -7,7 +7,7 @@ public class VCSLogger {
 	}
 	public static void infoLogToCmd(String message)
 	{
-		System.out.println("Info -> " + message);
+		System.out.println(message);
 	}
 	public static void errorLogToCmd(String TAG,String message){
 		//debug

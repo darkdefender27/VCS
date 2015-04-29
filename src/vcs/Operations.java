@@ -765,7 +765,6 @@ public class Operations {
 			System.out.println(mergedVCSTree.printTree(0));
 			//write mergedVCSTree to disk
 			mergedVCSTree.writeOriginalToDisk();
-			System.out.println(mergedVCSTree.findTreeIfExist("web.config", 0).getObjectHash());
 			//prepare commit object
 			VCSCommit mergedCommitObject = new VCSCommit(workingDirectory, firstCommitObject, mergedVCSTree, "merge", VCS.getUserName(), VCS.getUserName());
 			mergedCommitObject.addParent(secondCommitObject);
@@ -1316,8 +1315,8 @@ public class Operations {
 			commit = getHead(workingDir);
 			boolean status = true;
 			Iterator<AbstractVCSTree> it = commit.getTree().getImmediateChildren().listIterator();
-			//VCSLogger.debugLogToCmd("VCS#MAIN#checkout",commit.getTree().printTree(0));
-			//VCSLogger.debugLogToCmd("VCS#MAIN#checkout", "Tree Printed");
+			VCSLogger.debugLogToCmd("VCS#MAIN#checkout",commit.getTree().printTree(0));
+			VCSLogger.debugLogToCmd("VCS#MAIN#checkout", "Tree Printed");
 			while(it.hasNext())
 			{
 				status = (it.next()).writeOriginalToDisk();

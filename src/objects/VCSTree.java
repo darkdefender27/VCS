@@ -32,7 +32,7 @@ public class VCSTree extends AbstractVCSTree{
 		this.type = "tree";
 		generatingFromHash = true;
 		createInMemory();
-		//VCSLogger.debugLogToCmd("VCSTree#", diskPath +" tree restored");
+		VCSLogger.debugLogToCmd("VCSTree#", diskPath +" tree restored");
 	}
 	
 	public VCSTree(String objectHash,String workingDirectory,String diskPath,String name,String tmpDirName){
@@ -43,7 +43,7 @@ public class VCSTree extends AbstractVCSTree{
 		this.type = "tree";
 		generatingFromHash = true;
 		createInMemory();
-		//VCSLogger.debugLogToCmd("VCSTree#", diskPath +" tree restored");
+		VCSLogger.debugLogToCmd("VCSTree#", diskPath +" tree restored");
 	}
 	
 	private boolean generatingFromHash;

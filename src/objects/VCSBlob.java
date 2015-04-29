@@ -32,7 +32,7 @@ public class VCSBlob extends AbstractVCSTree{
 	public VCSBlob(String objectHash,String workingDirectory,String diskPath,String name){
 		super(objectHash,workingDirectory,diskPath,name);
 		this.type = "blob";
-		//VCSLogger.debugLogToCmd("VCSBlob#", diskPath + " blob restored");
+		VCSLogger.debugLogToCmd("VCSBlob#", diskPath + " blob restored");
 	}
 	
 	public VCSBlob(String objectHash,String workingDirectory,String diskPath,String name,String tmpDirName){
@@ -40,7 +40,7 @@ public class VCSBlob extends AbstractVCSTree{
 		this.readFromTempDir = true;
 		this.readOpSourceTempDirName = tmpDirName;
 		this.type = "blob";
-		//VCSLogger.debugLogToCmd("VCSBlob#", diskPath + " blob restored");
+		VCSLogger.debugLogToCmd("VCSBlob#", diskPath + " blob restored");
 	}
 	
 	/**
