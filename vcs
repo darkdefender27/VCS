@@ -7,7 +7,7 @@ then
 _workingDir=$(pwd)
 _workingDir="$_workingDir/"
 	
-_jarPath="/bin/vcs.jar"
+_jarPath="/bin/1vcs.jar"
 _runJar="java -jar $_jarPath"
 
 	#init bare repository
@@ -125,6 +125,28 @@ _runJar="java -jar $_jarPath"
 		fi
 	fi
 	
+	#diff
+	if [ $1 = "diff" ]
+	then
+		if [ $_noOfArgs -eq 2 ]
+		then
+		$_runJar $1 $_workingDir $2
+		else
+		echo "Message expected : vcs diff filename"
+		fi
+	fi
+	
+	#show
+	if [ $1 = "show" ]
+	then
+		if [ $_noOfArgs -eq 2 ]
+		then
+		$_runJar $1 $_workingDir $2
+		else
+		echo "Message expected : vcs show objectId"
+		fi
+	fi
+	
 	#checkout
 	if [ $1 = "checkout" ]
 	then
@@ -132,9 +154,54 @@ _runJar="java -jar $_jarPath"
 		then
 		$_runJar $1 $_workingDir $2 $3
 		else
-		echo "commit/branch expected : vcs checkout Options: -b [branch]  | -f [relativeFilePath] [commit]"
+		echo "format expected : vcs checkout Options: -b [branch]  | -f [relativeFilePath] [commit]"
 		fi
 	fi
+
+	#start-server
+	if [ $1 = "start-server" ]
+	then
+		if [ $_noOfArgs -eq 3 ]
+		then
+		$_runJar $1 $2 $3
+		else
+		echo "format expected : start-server ip_address port_number"
+		fi
+	fi
+
+	#clone
+	if [ $1 = "clone" ]
+	then
+		if [ $_noOfArgs -eq 3 ]
+		then
+		$_runJar $1 $2 $3
+		else
+		echo "format expected : clone http://ip_address:port/repoName.vcs/ /home/../AnyLocalDir/"
+		fi
+	fi
+
+	#push
+	if [ $1 = "push" ]
+	then
+		if [ $_noOfArgs -eq 3 ]
+		then
+		$_runJar $1 $2 $3
+		else
+		echo "format expected : push remote_handle_name target_branch_name"
+		fi
+	fi
+
+	#fetch
+	if [ $1 = "fetch" ]
+	then
+		if [ $_noOfArgs -eq 2 ]
+		then
+		$_runJar $1 $2
+		else
+		echo "format expected : fetch remote_handle_name"
+		fi
+	fi
+
 
 else
 echo "Atleast one argument expected : vcs [arg1] [arg2] .."

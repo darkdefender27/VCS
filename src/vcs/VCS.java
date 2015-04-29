@@ -129,16 +129,7 @@ public class VCS {
 
 	public static void main(String[] args)
 	{
-		String userName=null;
-		//place your cmdArgs here if required
-		
-		String cmdArgs = "branch /home/rounak/final#year#project/VCS#v1.5.0/VCSDebug/";
-		//String cmdArgs = "log /home/rounak/final#year#project/VCS#v1.5.0/VCSDebug/";
-		//String cmdArgs = "switch /home/rounak/final#year#project/VCS#v1.5.0/VCSDebug/ branch branch1";
-		args = cmdArgs.split(" ");
-		//end of cmdArgs
-		userName=getUserName();
-		args[1] = replaceHashWithSpace(args[1]);
+		String userName = getUserName();
 		
 		boolean flag = false;
 		int argLength = args.length;
@@ -422,6 +413,7 @@ public class VCS {
 				}
 				if(args[0].equals("diff") &&  argLength==3)
 				{
+					//diff workDir name
 					String workingDir=args[1];
 					String fileName=args[2];
 					try 
@@ -435,6 +427,7 @@ public class VCS {
 				}
 				if(args[0].equals("show") && argLength==3)
 				{
+					//show workDir id
 					String workingDir=args[1];
 					String id=args[2];
 					String retVal=VCSObject.returnObject(id,workingDir);
