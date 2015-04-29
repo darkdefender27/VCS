@@ -93,7 +93,7 @@ public class NetworkOps {
 					bis.close();	
 				}
 			}
-			VCSLogger.infoLogToCmd("Succesful PUSH_UNZIP operation. CHECK CONTENTS IN PUSH_RECEIPT.");
+			//VCSLogger.infoLogToCmd("Succesful PUSH_UNZIP operation. CHECK CONTENTS IN PUSH_RECEIPT.");
 			zipFile.close();
 			msg = "SUCCESSFUL PUSH...";
 		}

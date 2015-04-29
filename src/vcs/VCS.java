@@ -153,7 +153,7 @@ public class VCS {
 					//clone http://ip:port/repoName.vcs /home/../somePathOnLocalMachine/
 					ops.clone(args[1],args[2]);
 				}
-				if (args[0].equals("pull") && argLength == 2){
+				if (args[0].equals("fetch") && argLength == 2){
 					//pull origin i.e. "vcs pull remote_handle_name"
 					ops.pull(args[1]);
 				}
@@ -167,7 +167,6 @@ public class VCS {
 					}
 				}
 				
-				//~~
 			
 				if(args[0].equals("init") && argLength == 2){
 					//init workDir

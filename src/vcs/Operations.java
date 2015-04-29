@@ -1552,7 +1552,7 @@ public class Operations {
     				//conn.setRequestProperty("Accept-Charset", "UTF-8"); *Not required
     				conn.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
     				conn.setRequestProperty("Accept","*/*");
-    				VCSLogger.infoLogToCmd("REPO URL: " + repoUrl);
+    				VCSLogger.debugLogToCmd("URL", "REPO URL: " + repoUrl);
     				
     				//int status = ((HttpURLConnection) conn).getResponseCode();
     				//VCSLogger.infoLogToCmd("STATUS RECEIVED: " + status);
@@ -1565,10 +1565,10 @@ public class Operations {
     				getPullTempFolder(userWorkDir);
     				boolean pullTempCreated = new File(Operations.getPullTempFolder(userWorkDir)).mkdir();
     				if(pullTempCreated) {
-    					VCSLogger.infoLogToCmd("> Creatd pulltemp directory in .vcs");
+    					//VCSLogger.infoLogToCmd("> Creatd pulltemp directory in .vcs");
     				}
     				else {
-    					VCSLogger.infoLogToCmd("> Could not create pulltemp directory in .vcs");
+    					//VCSLogger.infoLogToCmd("> Could not create pulltemp directory in .vcs");
     				}
     				
     				//#!
@@ -2028,7 +2028,6 @@ public class Operations {
 			FileUpload fUpload = new FileUpload();
 			
 			File file = new File (fname) ;
-			VCSLogger.infoLogToCmd("repoUrl passed: " + repoUrl);
 			//repoUrl required format: 127.0.0.1:8009
 	        String response = fUpload.executeMultiPartRequest("http://127.0.0.1:8009", file, file.getName(), "File Upload proceeding...") ;
 	        System.out.println("Response received : " + response);
