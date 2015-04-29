@@ -98,24 +98,19 @@ public class EntryPoint extends JFrame {
 		//file2Contents =readFileIntoString("C:/Users/Ambarish/Desktop/vcsdebug/2.txt");
 		file2Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/1.txt");
 		file3Contents = readFileIntoString("C:/Users/Ambarish/Desktop/project/VCS/1.txt");
-		//System.out.println("here");
-		//FileDiffResult result = null;
-//		try 
-//		{
-//			Diff obj=new Diff();
-//			result = obj.diff(file1Contents,file2Contents, null, false);
-//			System.out.println(result.getLineResult().getNoOfLinesAdded()
-//					+ " lines inserted ");
-//			System.out.println((result.getLineResult().getNoOfLinesDeleted())
-//					+ " lines deleted ");
-//			System.out.println(result.getLineResult().getNoOfLinesUnmodified()
-//					+ " lines unchanged ");
-//		} catch (Exception e) {
-//			System.out.println("here");
-//		}
-		String result=getMergeResult(file3Contents, file1Contents, file2Contents, "master", "master", "a0354f", "45utnkla2");
-		System.out.println(result);
-		//AnalyticsEntryPoint obj = new AnalyticsEntryPoint("C:/Users/Ambarish/Desktop/vcsdebug/");
+		System.out.println("here");
+		FileDiffResult result = null;
+		try 
+		{
+			Diff obj=new Diff();
+			result = obj.diff(file1Contents,file2Contents, null, false);
+			obj.viewResults(result, result.getLeftFile(), result.getRightFile());
+		} catch (Exception e) {
+			System.out.println("here");
+		}
+		//String result=getMergeResult(file3Contents, file1Contents, file2Contents, "master", "master", "a0354f", "45utnkla2");
+		//System.out.println(result);
+//		AnalyticsEntryPoint obj = new AnalyticsEntryPoint("C:/Users/Ambarish/Desktop/vcsdebug/");
 	}
 	
 	public static String getMergeResult(String commonAncestor,String version1, String version2,String leftBranchName, String rightBranchName,String leftCommitId,String rightCommitId)

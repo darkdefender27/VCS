@@ -14,11 +14,13 @@ import logger.VCSLogger;
 import objects.AbstractVCSTree;
 import objects.VCSBlob;
 import objects.VCSCommit;
+import objects.VCSObject;
 import network.NetworkOps;
 import network.SimpleWebServer;
 
 public class VCS {
 	
+	private static String emailID=null;
 	///compare hashes for changed files
 	private static void listAllFiles(String directoryName, ArrayList<String> files,String initialWorkingDir) 
 	{
@@ -54,6 +56,7 @@ public class VCS {
 		String retVal=null;
 		String homeDir=System.getProperty("user.home").replace("\\", "/");
 		File f=new File(homeDir+"/" +Constants.CONFIG_FILE);
+		String line;
 		if(f.exists())
 		{
 			try 
@@ -71,6 +74,13 @@ public class VCS {
 							{
 								retVal=retVal.split("=")[1];
 								retVal=retVal.replace(" ", "");
+								line=br.readLine();
+								if(line.contains("email"))
+								{
+									line=line.split("=")[1];
+									line=line.replace(" ", "");
+									emailID=line;
+								}
 								done=true;
 							}
 						}
@@ -88,7 +98,6 @@ public class VCS {
 		}
 		else
 		{
-			System.out.println("here");
 			try 
 			{
 				boolean created=f.createNewFile();
@@ -410,6 +419,67 @@ public class VCS {
 				}if(args[0].equals("log") && argLength == 2){
 					//log workdir
 					ops.vcsCommitLog(args[1]);
+				}
+				if(args[0].equals("diff") &&  argLength==3)
+				{
+					String workingDir=args[1];
+					String fileName=args[2];
+					try 
+					{
+						VCSCommit parent=ops.getHead(workingDir);
+						ops.doVCSDiff(parent, fileName, workingDir);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				if(args[0].equals("show") && argLength==3)
+				{
+					String workingDir=args[1];
+					String id=args[2];
+					String retVal=VCSObject.returnObject(id,workingDir);
+					VCSLogger.infoLogToCmd(retVal);
+					
+				}
+				if(args[0].equals("config") && argLength==6)
+				{
+					String workingDir=args[1];
+					String name=args[5];
+					String homeDir=System.getProperty("user.home").replace("\\", "/");
+					File f=new File(homeDir+"/" +Constants.CONFIG_FILE);
+					BufferedWriter bw;
+					try 
+					{
+						bw = new BufferedWriter(new FileWriter(f));
+						bw.write("[user]");
+						bw.append("\n");
+						bw.append("\t");
+						bw.append("name=");
+						if(args[4].equals("name"))
+						{
+							bw.append(name);
+						}
+						else
+						{
+							bw.append(userName);
+						}
+						bw.append("\n");
+						bw.append("\t");
+						bw.append("email=");
+						if(args[4].equals("email"))
+						{
+							bw.append(name);
+						}
+						else
+						{
+							bw.append(emailID);
+						}
+						bw.close();
+						VCSLogger.infoLogToCmd("Operation completed successfully");
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 		}
