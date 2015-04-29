@@ -2097,8 +2097,8 @@ public class Operations {
 			 * MERGE(localObject, remoteObject, LCA) if LCA is non NULL
 			 */
 
-			//mergeBranch(workingDir, localObject.getObjectHash(), remoteObject.getObjectHash(), LCA.getObjectHash());
-			
+			mergeBranch(workingDir, localObject.getObjectHash(), remoteObject.getObjectHash(), LCA.getObjectHash());
+			VCSLogger.infoLogToCmd("MERGE SUCCESSFUL... Connecting AGAIN-");
 			
 			/*
 			 *  1st push
@@ -2106,8 +2106,6 @@ public class Operations {
 			 *  commit (Resolve Conflicts)
 			 *  push 2nd time push
 			 */
-			
-			VCSLogger.infoLogToCmd("MERGE SUCCESSFUL... Connecting AGAIN-");
 			
 			/*
 			 * UPDATE INFORMATION OBTAINED AFTER MERGE
