@@ -49,6 +49,7 @@ import network.ConfigManipulation;
 import objects.AbstractVCSTree;
 import objects.VCSBlob;
 import objects.VCSCommit;
+import objects.VCSObject;
 import objects.VCSTree;
 import vcs.Constants;
 //import network.HashUtil;
@@ -1979,12 +1980,41 @@ public class Operations {
 		
 		return null;
 	}
+
+	public void vcsStatus(String workDir) {
+		try {
+			StringBuilder untrackedFiles = new StringBuilder();
+			StringBuilder modifiedFiles = new StringBuilder();
+			VCSCommit headCommit = getHead(workDir);
+			ArrayList<String> files = new ArrayList<String>();
+			listAllFiles(workDir, files, workDir);
+			VCSTree headTree = headCommit.getTree();
+			VCSBlob tempBlob = null;
+			for(String filename : files){
+				AbstractVCSTree fileTree = headTree.findTreeIfExist(filename, 0);
+				if(fileTree == null){
+					untrackedFiles.append("\t");
+					untrackedFiles.append(filename);
+					untrackedFiles.append("\n");
+				}else{
+					tempBlob = new VCSBlob("Temp", workDir + filename, workDir);
+					if(tempBlob != null){
+						if(!fileTree.getObjectHash().equals(tempBlob.getObjectHash())){
+							modifiedFiles.append("\t");
+							modifiedFiles.append(filename);
+							modifiedFiles.append("\n");
+						}
+					}
+				}
+			}
+			StringBuilder result = new StringBuilder();
+			result.append("\nModified Files:\n");
+			result.append(modifiedFiles);
+			result.append("Untracked Files:\n");
+			result.append(untrackedFiles);
+			VCSLogger.infoLogToCmd(result.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }
-
-
-
-
-
-
-
-

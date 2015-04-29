@@ -56,10 +56,11 @@ public class VCSBlob extends AbstractVCSTree{
 		try {
 			hashContent(filePath);
 		} catch (NoSuchAlgorithmException e) {
-			//e.printStackTrace();
-			VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
 		} catch (IOException e) {
-			VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
 		}
 		VCSLogger.debugLogToCmd("VCSBlob#", diskPath + " blob initialised");
 	}
@@ -120,9 +121,11 @@ public class VCSBlob extends AbstractVCSTree{
 	        	VCSLogger.debugLogToCmd("VCSBlob#writeObjectToDisk", diskPath + " blob written to disk");
 	        	return true;
 	        } catch (FileNotFoundException e) {
-	        	VCSLogger.errorLogToCmd("VCSBlob#writeObjectToDisk", e.toString());
+	        	e.printStackTrace();
+	        	//VCSLogger.errorLogToCmd("VCSBlob#writeObjectToDisk", e.toString());
 	        } catch (IOException e) {
-	        	VCSLogger.errorLogToCmd("VCSBlob#writeObjectToDisk", e.toString());
+	        	e.printStackTrace();
+	        	//VCSLogger.errorLogToCmd("VCSBlob#writeObjectToDisk", e.toString());
 		    } 
 		}
 		return false;
@@ -161,9 +164,11 @@ public class VCSBlob extends AbstractVCSTree{
 	        	return true;
         	}  
 		}catch(FileNotFoundException e){
-			VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
 	    }catch(IOException e){
-	    	VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
+	    	e.printStackTrace();
+	    	//VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
 	    }
 		return false;
 	}
@@ -214,9 +219,11 @@ public class VCSBlob extends AbstractVCSTree{
 	        	return tempPath+folder+name;
         	}  
 		}catch(FileNotFoundException e){
-			VCSLogger.errorLogToCmd("VCSBlob#writeTempFile", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#writeTempFile", e.toString());
 	    }catch(IOException e){
-	    	VCSLogger.errorLogToCmd("VCSBlob#writeTempFile", e.toString());
+	    	e.printStackTrace();
+	    	//VCSLogger.errorLogToCmd("VCSBlob#writeTempFile", e.toString());
 	    }
 		return null;
 	}
@@ -334,9 +341,11 @@ public class VCSBlob extends AbstractVCSTree{
 	        	return true;
         	}  
 		}catch(FileNotFoundException e){
-			VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
 	    }catch(IOException e){
-	    	VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
+	    	e.printStackTrace();
+	    	//VCSLogger.errorLogToCmd("VCSBlob#writeOriginalToDisk", e.toString());
 	    }
 		return false;
 	}
@@ -347,10 +356,11 @@ public class VCSBlob extends AbstractVCSTree{
 		try {
 			hashContent(path);
 		} catch (NoSuchAlgorithmException e) {
-			//e.printStackTrace();
-			VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
 		} catch (IOException e) {
-			VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
+			e.printStackTrace();
+			//VCSLogger.errorLogToCmd("VCSBlob#VCSBlob(name,filepath,workDir)", e.toString());
 		}
 	}
 }
