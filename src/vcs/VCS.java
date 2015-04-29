@@ -326,10 +326,10 @@ public class VCS {
 						VCSLogger.infoLogToCmd("No files staged to commit");
 					}
 				}
-				if(args[0].equals("create") && args[2].equals("branch") && argLength == 5)
+				if(args[0].equals("create") && args[2].equals("branch") && argLength == 4)
 				{
+					//create workDir branch name
 					String branchName = args[3];
-					String commitHash = args[4];
 					String workingDir=replaceHashWithSpace(args[1]);
 					try {
 						if(workingDir.contains("\\"))
@@ -338,7 +338,7 @@ public class VCS {
 							System.out.println("create section " +workingDir);
 						}
 						System.out.println("create section " +workingDir);
-						flag = ops.createBranch(branchName,commitHash,workingDir);
+						flag = ops.createBranch(branchName,workingDir);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -351,6 +351,7 @@ public class VCS {
 				}
 				if(args[0].equals("switch") && args[2].equals("branch") && argLength == 4)
 				{
+					//switch workDir branch name
 					String branchName = args[3];
 					try {
 						String workDir = replaceHashWithSpace(args[1]);
@@ -380,6 +381,7 @@ public class VCS {
 				}
 				if(args[0].equals("merge") && args[1].equals("branch") && argLength == 5)
 				{
+					//merge branch workDir b1 b2
 					String firstBranchName = args[3];
 					String secondBranchName = args[4];
 					try {

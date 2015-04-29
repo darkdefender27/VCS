@@ -1142,11 +1142,14 @@ public class Operations {
 
 		return retval;
 	}
-	boolean createBranch(String nameOfBranch,String commitHash,String workingDirectory) throws IOException
+	boolean createBranch(String nameOfBranch,String workingDirectory) throws IOException
 	{
 		//String workingDirectory = "/home/rounak/final year project/VCS v1.5.0/VCSDebug/";
 		//String branchDir = "/home/rounak/final year project/VCS v1.5.0/VCSDebug/.vcs/branches";
 		String branchDir = workingDirectory + ".vcs/branches";
+		
+		VCSCommit headCommit = getHead(workingDirectory);
+		String commitHash = headCommit.getObjectHash();
 		
 		System.out.println("create branch dir "+branchDir);
 		

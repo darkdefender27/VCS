@@ -33,20 +33,106 @@ _runJar="java -jar $_jarPath"
 	then
 		if [ $_noOfArgs -eq 2 ]
 		then
-		$_runJar $1 $_workingDir $USER $2
+		$_runJar $1 $_workingDir $2
 		else
 		echo "Message expected : vcs commit [message]"
 		fi
 	fi
 
+	#log
+	if [ $1 = "log" ]
+	then
+		if [ $_noOfArgs -eq 1 ]
+		then
+		$_runJar $1 $_workingDir
+		else
+		echo "Message expected : vcs log"
+		fi
+	fi
+	
+	#status
+	if [ $1 = "status" ]
+	then
+		if [ $_noOfArgs -eq 1 ]
+		then
+		$_runJar $1 $_workingDir
+		else
+		echo "Message expected : vcs status"
+		fi
+	fi
+	
+	#create branch
+	if [ $1 = "create" ]
+	then
+		if [ $2 = "branch"]
+		then 
+			if [ $_noOfArgs -eq 3 ]
+			then
+				$_runJar $1 $_workingDir $2 $3
+			else
+				echo "Message expected : vcs create branch name"
+			fi
+		fi
+	fi
+	
+	#switch
+	if [ $1 = "switch" ]
+	then
+		if [ $2 = "branch"]
+		then 
+			if [ $_noOfArgs -eq 3 ]
+			then
+				$_runJar $1 $_workingDir $2 $3
+			else
+				echo "Message expected : vcs switch branch name"
+			fi
+		fi
+	fi
+	
+	#merge branch
+	if [ $1 = "merge" ]
+	then
+		if [ $2 = "branch"]
+		then 
+			if [ $_noOfArgs -eq 4 ]
+			then
+				$_runJar $1 $2 $_workingDir $3 $4
+			else
+				echo "Message expected : vcs merge branch b1 b2"
+			fi
+		fi
+	fi
+
+	#branch
+	if [ $1 = "branch" ]
+	then
+		if [ $_noOfArgs -eq 1 ]
+		then
+		$_runJar $1 $_workingDir
+		else
+		echo "Message expected : vcs branch"
+		fi
+	fi
+	
+	#clean
+	if [ $1 = "clean" ]
+	then
+		if [ $_noOfArgs -eq 1 ]
+		then
+		$_runJar $1 $_workingDir
+		else
+		echo "Message expected : vcs clean"
+		fi
+	fi
+	
 	#checkout
 	if [ $1 = "checkout" ]
 	then
-		if [ $_noOfArgs -eq 2 ]
+		if [ $_noOfArgs -eq 3 ]
 		then
-		$_runJar $1 $_workingDir $2
+		$_runJar $1 $_workingDir $2 $3
 		else
-		echo "commit/branch expected : vcs add [commit/branch]"
+		echo "commit/branch expected : vcs checkout Options: -b [branch]  | -f [relativeFilePath] [commit]"
 		fi
 	fi
 
