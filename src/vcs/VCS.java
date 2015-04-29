@@ -122,7 +122,8 @@ public class VCS {
 		String userName=null;
 		//place your cmdArgs here if required
 		
-		String cmdArgs = "log /home/rounak/final#year#project/VCS#v1.5.0/VCSDebug/";
+		String cmdArgs = "branch /home/rounak/final#year#project/VCS#v1.5.0/VCSDebug/";
+		//String cmdArgs = "log /home/rounak/final#year#project/VCS#v1.5.0/VCSDebug/";
 		//String cmdArgs = "switch /home/rounak/final#year#project/VCS#v1.5.0/VCSDebug/ branch branch1";
 		args = cmdArgs.split(" ");
 		
@@ -340,6 +341,16 @@ public class VCS {
 					if(flag)
 					{
 						System.out.println("Branch switched successfully");
+					}
+				}
+				if(args[0].equals("branch") && argLength == 2)
+				{
+					//branch workDir
+					try {
+						ops.branch(args[1]);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 				}
 				if(args[0].equals("merge") && args[1].equals("branch") && argLength == 5)

@@ -316,7 +316,8 @@ public class Operations {
 			StringBuilder overallPath = new StringBuilder();
 			String[] path = stagedFiles[i].split("/");
 			overallPath.append(workingDir);
-			System.out.println("overall path" +overallPath);
+			VCSLogger.debugLogToCmd("overall path", overallPath.toString());
+			//System.out.println("overall path" +overallPath);
 				for(int j=0;j<path.length;j++)
 				{
 					if(j != 0)
@@ -1213,6 +1214,56 @@ public class Operations {
 	    return retval;
 	}
 	
+	public void branch(String workingDirectory) throws IOException
+	{
+		BufferedReader br = null;
+		String sCurrentBranch = null;
+		File currentBranch = new File(getHeadsFolder(workingDirectory) + "/currentBranch");
+		String sCurrentLine;
+		if (currentBranch.exists()) {
+			br = new BufferedReader(new FileReader(getHeadsFolder(workingDirectory)+ "/currentBranch"));
+			while ((sCurrentLine = br.readLine()) != null) {
+				sCurrentBranch = sCurrentLine;
+			}
+			br.close();
+		}
+
+		
+		ArrayList<String> files = new ArrayList<String>();
+		listAllFiles(workingDirectory+".vcs/branches/", files, workingDirectory+".vcs/branches/");
+		for(int i=0;i<files.size();i++)
+		{
+			if(files.get(i).equals(sCurrentBranch))
+			{
+				System.out.println(files.get(i)+"*");
+			}
+			else
+			{
+					System.out.println(files.get(i));
+			}
+		}
+		
+	}
+	public void clean(String workingDir)
+	{
+		VCSCommit commit;
+		try {
+			commit = getHead(workingDir);
+			boolean status = true;
+			Iterator<AbstractVCSTree> it = commit.getTree().getImmediateChildren().listIterator();
+			//VCSLogger.debugLogToCmd("VCS#MAIN#checkout",commit.getTree().printTree(0));
+			//VCSLogger.debugLogToCmd("VCS#MAIN#checkout", "Tree Printed");
+			while(it.hasNext())
+			{
+				status = (it.next()).writeOriginalToDisk();
+				if(!status) break;
+			}
+			if(status) VCSLogger.infoLogToCmd("Successfully Cleaned");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	private void listAllFiles(String directoryName, ArrayList<String> files,String initialWorkingDir) {
 	    File directory = new File(directoryName);
 
